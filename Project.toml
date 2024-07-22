@@ -1,0 +1,13 @@
+name = "DINDiff"
+uuid = "a109cbdf-a86b-4edd-9e54-81f3491ce7a2"
+authors = ["Alexander Barth <barth.alexander@gmail.com> and contributors"]
+version = "0.1.0"
+
+[compat]
+julia = "1.9"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
