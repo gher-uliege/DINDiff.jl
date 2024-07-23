@@ -21,7 +21,7 @@ Information about julia's package manager is available: https://pkgdocs.julialan
 
 ## Data files
 
-A minimal NetCDF file for training has the following structure
+A minimal NetCDF file for training has the following structure:
 
 ```
 netcdf patches_64_64_0.8 {
