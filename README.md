@@ -19,3 +19,24 @@ Information about julia's package manager is available: https://pkgdocs.julialan
 * [`src/training.jl`](src/training.jl): script for training
 * [`src/inference.jl`](src/inference.jl): script for inference
 
+## Data files
+
+A minimal NetCDF file for training has the following structure
+
+```
+netcdf patches_64_64_0.8 {
+dimensions:
+	lon = 64 ;
+	lat = 64 ;
+	time = UNLIMITED ; // (851926 currently)
+variables:
+	double lon(time, lon) ;
+	double lat(time, lat) ;
+	double time(time) ;
+		time:units = "days since 1970-01-01" ;
+	float CHL(time, lat, lon) ;
+		CHL:_FillValue = -9999.f ;
+}
+```
+
+The variable can be of course for every application. 
