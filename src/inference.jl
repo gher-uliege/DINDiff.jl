@@ -183,7 +183,7 @@ for n = ntimes
     x0 = x0 |> device
 
     xc = generate_cond(
-        device, nothing, beta, model, train_mean, train_std, x0, Nsample;
+        device, beta, model, train_mean, train_std, x0, Nsample;
         x_diff = nothing,
     );
 

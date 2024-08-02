@@ -56,7 +56,7 @@ end
 
 x0: width x height x channel
 """
-function generate_cond(device, sz, beta, model, train_mean, train_std, x0, Nsample; x_diff = nothing, auxdata = nothing, noise = nothing)
+function generate_cond(device, beta, model, train_mean, train_std, x0, Nsample; x_diff = nothing, auxdata = nothing, noise = nothing)
     T = length(beta)
 
     α,ᾱ,σ = noise_schedule(device(beta))
