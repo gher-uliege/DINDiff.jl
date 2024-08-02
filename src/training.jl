@@ -88,7 +88,7 @@ sz = size(train_input)[1:2]
 
 auxdata_loader = nothing
 
-auxdata_loader = AuxData3(
+auxdata_loader = AuxData(
      (lon,lat,time),(Δlon,Δlat,Δtime),train_input,
      ntime_win;
      cycle = 365.25)

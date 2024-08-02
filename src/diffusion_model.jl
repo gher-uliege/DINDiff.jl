@@ -533,7 +533,7 @@ function to_lin_index(pi::PatchIndex1,i,j,n)
 end
 
 
-struct AuxData3{T,N,TPI}
+struct AuxData{T,N,TPI}
     lon::Array{T,2}
     lat::Array{T,2}
     lon_range::NTuple{2,T}
@@ -545,7 +545,7 @@ struct AuxData3{T,N,TPI}
     pi::TPI
 end
 
-function AuxData3(
+function AuxData(
     coord,(Δlon,Δlat,Δtime),train_input,
     ntime_win;
     lon_range = extrema(coord[1]),
@@ -558,7 +558,7 @@ function AuxData3(
     sin_time = @. sin(2π * Dates.dayofyear(time)/cycle)
 
     pi = PatchIndex1((lon,lat,time),(Δlon,Δlat,Δtime))
-    AuxData3{Float32,2,typeof(pi)}(
+    AuxData{Float32,2,typeof(pi)}(
         lon,
         lat,
         lon_range,
@@ -570,13 +570,13 @@ function AuxData3(
         pi)
 end
 
-#naux_data(auxd::AuxData3) = 2 + 2 + 2 * (auxd.ntime_win-1)
-#naux_data(auxd::AuxData3) = 2 * (auxd.ntime_win-1)
-naux_data(auxd::AuxData3) = (auxd.ntime_win-1)
+#naux_data(auxd::AuxData) = 2 + 2 + 2 * (auxd.ntime_win-1)
+#naux_data(auxd::AuxData) = 2 * (auxd.ntime_win-1)
+naux_data(auxd::AuxData) = (auxd.ntime_win-1)
 
 normalize(x,x_range) = (x .- x_range[1]) ./ (x_range[2] - x_range[1])
 
-function load_aux_data!(auxd::AuxData3,index,aux_data)
+function load_aux_data!(auxd::AuxData,index,aux_data)
     ntime_win = auxd.ntime_win
     train_input = auxd.train_input
 
