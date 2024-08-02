@@ -82,7 +82,7 @@ lat = round.(Int, (latf .- Δlat/2) / Δlat) * Δlat;
     @test Float32.(lat) ≈ Float32.(latf)
 end
 
-pi = PatchIndex1((lon,lat,time),(Δlon,Δlat,Δtime))
+pi = PatchIndex((lon,lat,time),(Δlon,Δlat,Δtime))
 
 sz = size(train_input)[1:2]
 

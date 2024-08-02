@@ -78,7 +78,7 @@ close(ds_train)
 lon = round.(Int, (lonf .- Δlon/2) / Δlon) * Δlon;
 lat = round.(Int, (latf .- Δlat/2) / Δlat) * Δlat;
 
-pi = PatchIndex1((lon,lat,time),(Δlon,Δlat,Δtime));
+pi = PatchIndex((lon,lat,time),(Δlon,Δlat,Δtime));
 
 sz = size(data_cv)[1:2]
 

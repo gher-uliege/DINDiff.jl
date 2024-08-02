@@ -470,7 +470,7 @@ random(T,min,max) = min + (max-min) * rand(T)
 random(min,max) = random(Float64,min,max)
 
 
-struct PatchIndex1{N,T,TT,TD}
+struct PatchIndex{N,T,TT,TD}
     sz::NTuple{N,Int}
     lon::Array{T,2}
     lat::Array{T,2}
@@ -484,7 +484,7 @@ struct PatchIndex1{N,T,TT,TD}
     patch_index::Array{Int,3}
 end
 
-function PatchIndex1((lon,lat,time),(Δlon,Δlat,Δtime))
+function PatchIndex((lon,lat,time),(Δlon,Δlat,Δtime))
     sz = (size(lon,1),size(lat,1))
     lon0 = minimum(lon)
     lat0 = minimum(lat)
@@ -499,7 +499,7 @@ function PatchIndex1((lon,lat,time),(Δlon,Δlat,Δtime))
         patch_index[ii[l],jj[l],nn[l]] = l
     end
 
-    PatchIndex1(
+    PatchIndex(
         sz,
         lon,
         lat,
@@ -522,11 +522,11 @@ function _from_lin_index((lon0,lat0,time0),(Δlon,Δlat,Δtime),(lon,lat,time),s
     return (i,j,n)
 end
 
-from_lin_index(pi::PatchIndex1,l) = _from_lin_index(
+from_lin_index(pi::PatchIndex,l) = _from_lin_index(
     (pi.lon0,pi.lat0,pi.time0),(pi.Δlon,pi.Δlat,pi.Δtime),
     (pi.lon[1,l],pi.lat[1,l],pi.time[l]),pi.sz)
 
-function to_lin_index(pi::PatchIndex1,i,j,n)
+function to_lin_index(pi::PatchIndex,i,j,n)
     if checkbounds(Bool,pi.patch_index,i,j,n)
         return @inbounds pi.patch_index[i,j,n]
     else
@@ -559,7 +559,7 @@ function AuxData(
     cos_time = @. cos(2π * Dates.dayofyear(time)/cycle)
     sin_time = @. sin(2π * Dates.dayofyear(time)/cycle)
 
-    pi = PatchIndex1((lon,lat,time),(Δlon,Δlat,Δtime))
+    pi = PatchIndex((lon,lat,time),(Δlon,Δlat,Δtime))
     AuxData{Float32,2,typeof(pi)}(
         lon,
         lat,
