@@ -252,7 +252,7 @@ end
 
 
 
-struct Dataset6{T,N,Trng,Tdevice,Ta,Taux}
+struct DatasetLoader{T,N,Trng,Tdevice,Ta,Taux}
     train_input::Array{T,N}
     rng::Trng
     steps::Int64
@@ -264,9 +264,9 @@ struct Dataset6{T,N,Trng,Tdevice,Ta,Taux}
     training::Bool
 end
 
-numobs(d::Dataset6) = size(d.train_input)[end]
+numobs(d::DatasetLoader) = size(d.train_input)[end]
 
-function getobs_orig(d::Dataset6,index::Union{AbstractVector,Integer})
+function getobs_orig(d::DatasetLoader,index::Union{AbstractVector,Integer})
     rng = d.rng
     auxdata_loader = d.auxdata_loader
     sz = size(d.train_input)[1:2]
@@ -303,7 +303,7 @@ function getobs_orig(d::Dataset6,index::Union{AbstractVector,Integer})
     return (x0_cpu,x_mask_cpu)
 end
 
-function getobs(d::Dataset6,index::Union{AbstractVector,Integer})
+function getobs(d::DatasetLoader,index::Union{AbstractVector,Integer})
     device = d.device
     alpha_bar = d.alpha_bar
     T = d.steps

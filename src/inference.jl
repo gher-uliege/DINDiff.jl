@@ -165,7 +165,7 @@ alpha,alpha_bar,sigma = noise_schedule(beta)
 
 training = false
 rng = Random.GLOBAL_RNG
-dd = Dataset6(data_cv,rng,T,train_mean,train_std,device,alpha_bar,auxdata_loader,training)
+dd = DatasetLoader(data_cv,rng,T,train_mean,train_std,device,alpha_bar,auxdata_loader,training)
 
 ntimes = 1:size(data_cv,4)
 

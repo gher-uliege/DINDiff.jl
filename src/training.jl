@@ -160,7 +160,7 @@ training = true
 alpha,alpha_bar,sigma = device.(noise_schedule(beta))
 
 rng = Random.GLOBAL_RNG
-dd = Dataset6(train_input,rng,T,train_mean,train_std,device,alpha_bar,auxdata_loader,training)
+dd = DatasetLoader(train_input,rng,T,train_mean,train_std,device,alpha_bar,auxdata_loader,training)
 
 @info "Data loader uses $(Threads.nthreads()) thread(s)"
 dl = Flux.DataLoader(dd; batchsize = batch_size, shuffle=true,
