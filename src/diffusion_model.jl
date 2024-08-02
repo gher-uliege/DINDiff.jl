@@ -469,6 +469,7 @@ end
 random(T,min,max) = min + (max-min) * rand(T)
 random(min,max) = random(Float64,min,max)
 
+# PatchIndex is currently not used
 
 struct PatchIndex{N,T,TT,TD}
     sz::NTuple{N,Int}
@@ -552,6 +553,7 @@ struct AuxData{T,N,TPI}
     pi::TPI
 end
 
+# Use of auxiliary data is currently disabled as it did not improve the results
 function AuxData(
     coord,(Δlon,Δlat,Δtime),train_input,
     ntime_win;

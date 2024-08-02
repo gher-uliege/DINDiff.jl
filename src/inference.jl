@@ -78,8 +78,6 @@ close(ds_train)
 lon = round.(Int, (lonf .- Δlon/2) / Δlon) * Δlon;
 lat = round.(Int, (latf .- Δlat/2) / Δlat) * Δlat;
 
-pi = PatchIndex((lon,lat,time),(Δlon,Δlat,Δtime));
-
 sz = size(data_cv)[1:2]
 
 epoch_str = @sprintf("%05d",epoch)
@@ -98,6 +96,7 @@ BSON.@load model_fname m
 params = JSON3.read(joinpath(dirname(model_fname),"params.json"))
 ntime_win = get(params,:ntime_win,1)
 
+#auxdata_loader = nothing
 auxdata_loader = AuxData(
     (lon,lat,time),(Δlon,Δlat,Δtime),data_cv,
     ntime_win;
@@ -107,7 +106,6 @@ auxdata_loader = AuxData(
 
 ds = NCDataset(fname_cv,"r")
 
-fname_cv_out = "TESTTEST.nc"
 isfile(fname_cv_out) && rm(fname_cv_out)
 
 dsout = NCDataset(fname_cv_out,"c")

@@ -84,14 +84,13 @@ end
 
 sz = size(train_input)[1:2]
 
+#auxdata_loader = nothing
 auxdata_loader = AuxData(
      (lon,lat,time),(Δlon,Δlat,Δtime),train_input,
      ntime_win;
      cycle = 365.25)
 
-
 beta = collect(LinRange(0, max_beta, T))
-
 
 mkpath(resdir)
 model_fname = joinpath(resdir,"model_diffusion.bson")
@@ -99,7 +98,7 @@ model_parameters_fname = joinpath(resdir,"model_parameters_diffusion.bson")
 
 cp(@__FILE__,joinpath(resdir,basename(@__FILE__)))
 
-#for fn in ["diffusion_model.jl","test_diffusion_cmp.jl"]
+#for fn in ["diffusion_model.jl","inference.jl"]
 #    cp(joinpath(dirname(@__FILE__),fn),joinpath(resdir,fn))
 #end
 
