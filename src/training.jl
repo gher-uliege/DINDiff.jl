@@ -116,7 +116,7 @@ if auxdata_loader !== nothing
     out_channels += naux_data(auxdata_loader)
 end
 
-model = genmodel2(
+model = genmodel(
     kernel_size,activation;
     in_channels = in_channels,
     out_channels = out_channels,

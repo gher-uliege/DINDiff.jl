@@ -1,4 +1,8 @@
+"""
+    xt = TimeAppender((x,t))
 
+Appent diffusion time `t` to input vector `x`
+"""
 function TimeAppender((x,t))
     # x is W x H x C x N   or   W x C x N
     sz = size(x)
@@ -12,49 +16,13 @@ function TimeAppender((x,t))
 end
 
 
-function generate1(device, sz, T, alpha, alpha_bar, sigma, model, train_mean, train_std)
-    α = Float32.(cpu(alpha))
-    ᾱ = cpu(alpha_bar)
-    σ = cpu(sigma)
-
-    x = randn(Float32,sz) |> device
-
-    for t in T:-1:1
-        tt = fill(t,ntuple(i -> (i == ndims(x) ? size(x,i) : 1),ndims(x)))
-        tt = Float32.(tt ./ T .- 0.5)
-        tt = repeat(tt,inner=ntuple(i -> (i > ndims(x)-2 ? 1 : size(x,i)),ndims(x))) |> device
-
-        ϵ = model((x,tt))
-        z =
-            if t == 1
-                zeros(Float32,size(x)) |> device
-            else
-                randn(Float32,size(x)) |> device
-            end
-
-        if α[t] == 1
-            ratio = 0   # 0/√0
-        else
-            ratio = (1 - α[t]) / √(1 - ᾱ[t])
-        end
-
-        μ = (1 / √(α[t]) * (x - ratio * ϵ))
-
-        x .= μ + σ[t] * z
-
-        begin
-            println("stat of x at step ", t, "NaN ",count(isnan.(x)), "range", extrema(x))
-        end
-
-    end
-
-    return x * train_std .+ train_mean
-end
-
-
 """
+    generate_cond(device, beta, model, train_mean, train_std, x0, Nsample; x_diff = nothing, auxdata = nothing, noise = nothing)
 
-x0: width x height x channel
+Conditional generation `x` using incomplete image `x0` (where missing values are
+`NaN`s)
+
+`x0` is a tensor of the dimension width x height x channel.
 """
 function generate_cond(device, beta, model, train_mean, train_std, x0, Nsample; x_diff = nothing, auxdata = nothing, noise = nothing)
     T = length(beta)
@@ -168,7 +136,7 @@ function block(ks,activation,channels,level)
     end
 end
 
-function genmodel2(kernel_size,activation;
+function genmodel(kernel_size,activation;
                   channels = (16,32,64,128),
                   in_channels = 1,
                   out_channels = 1,
