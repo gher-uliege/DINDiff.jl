@@ -136,6 +136,14 @@ function block(ks,activation,channels,level)
     end
 end
 
+"""
+    model = genmodel(kernel_size,activation;
+                  channels = (16,32,64,128),
+                  in_channels = 1,
+                  out_channels = 1)
+
+Returns the UNet
+"""
 function genmodel(kernel_size,activation;
                   channels = (16,32,64,128),
                   in_channels = 1,
@@ -143,7 +151,6 @@ function genmodel(kernel_size,activation;
                   )
 
     ks = kernel_size
-    # add time to every down/up sampling block?
 
     model = Chain(
         TimeAppender,
@@ -158,15 +165,22 @@ function genmodel(kernel_size,activation;
     )
 end
 
+"""
+    it = skipnan(x)
 
-
-#skipnan(x) = filter(isfinite,x)
+Iterator skipping `NaN`s
+"""
 skipnan(x) = Iterators.filter(!isnan, x)
 
 skipnan(T,x) = Iterators.map(T,Iterators.filter(!isnan, x))
 
-function savemodel(model,dirn,eopch::Integer,train_mean,train_std,beta,losses=[])
-    model_fname = joinpath(dirn,"model-checkpoint-" * @sprintf("%05d",eopch) * ".bson")
+"""
+    savemodel(model,dirn,epoch::Integer,train_mean,train_std,beta,losses=[])
+
+Save the trained `model` in `dirn`
+"""
+function savemodel(model,dirn,epoch::Integer,train_mean,train_std,beta,losses=[])
+    model_fname = joinpath(dirn,"model-checkpoint-" * @sprintf("%05d",epoch) * ".bson")
     savemodel(model,model_fname,train_mean,train_std,beta,losses)
 end
 
@@ -315,6 +329,10 @@ function noise_schedule(beta)
 end
 
 """
+    alpha, alpha_bar, sigma, losses = train(model, dl; ...)
+
+Train the denoising diffusion `model` using the data from data loader `dl`.
+
 All parameters, even with default values, can be domain specific
 """
 function train!(model,dl;
@@ -389,7 +407,12 @@ function train!(model,dl;
     return alpha, alpha_bar, sigma, losses
 end
 
+"""
+    prep_data!(data_input,fv,trans)
 
+Transform the data in-place using the function `trans` ignoring
+fillvalue `fv` and negative values.
+"""
 function prep_data!(data_input,fv,trans)
     @inbounds  for i in eachindex(data_input)
         if data_input[i] == fv
@@ -403,6 +426,13 @@ function prep_data!(data_input,fv,trans)
     nothing
 end
 
+
+"""
+    train_input = ncload(fname_train,varname,trans=log10)
+
+Load the variable `varname` from the file `fname_train` and apply the
+transformation `trans` (default `log10`).
+"""
 function ncload(fname_train,varname,trans=log10)
 
     ds = NCDataset(fname_train)
@@ -417,7 +447,11 @@ function ncload(fname_train,varname,trans=log10)
     return train_input
 end
 
+"""
+    in = extend(train_input)
 
+Extend the spatial dimension a power of 2 padding with `NaN`s.
+"""
 function extend(train_input)
     sz = size(train_input)
     sz2 = 2 .^ ceil.(Int,log2.(sz[1:2]))
