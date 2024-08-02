@@ -9,9 +9,20 @@ https://egusphere.copernicus.org/preprints/2024/egusphere-2024-1075/
 
 Submitted to Ocean Science
 
+## Installation
 
 The code is tested with Julia 1.9 and the julia package listed in [`Project.toml`](Project.toml).
 Information about julia's package manager is available: https://pkgdocs.julialang.org/v1/environments/#Using-someone-else's-project
+
+After downloading the source code, all dependencies of the project can be installed with:
+
+```julia
+using Pkg
+Pkg.activate("/path/to/DINDiff.jl")
+Pkg.instantiate()
+```
+
+where `/path/to/DINDiff.jl` is the path to the folder containing the file `Project.toml`.
 
 ## Code
 
