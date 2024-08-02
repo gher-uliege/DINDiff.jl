@@ -82,11 +82,7 @@ lat = round.(Int, (latf .- Δlat/2) / Δlat) * Δlat;
     @test Float32.(lat) ≈ Float32.(latf)
 end
 
-pi = PatchIndex((lon,lat,time),(Δlon,Δlat,Δtime))
-
 sz = size(train_input)[1:2]
-
-auxdata_loader = nothing
 
 auxdata_loader = AuxData(
      (lon,lat,time),(Δlon,Δlat,Δtime),train_input,

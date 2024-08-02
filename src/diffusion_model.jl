@@ -484,6 +484,11 @@ struct PatchIndex{N,T,TT,TD}
     patch_index::Array{Int,3}
 end
 
+"""
+    PatchIndex((lon,lat,time),(Δlon,Δlat,Δtime))
+
+Create an index of patches allowing to localize previous and next patches
+"""
 function PatchIndex((lon,lat,time),(Δlon,Δlat,Δtime))
     sz = (size(lon,1),size(lat,1))
     lon0 = minimum(lon)
