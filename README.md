@@ -1,5 +1,6 @@
-# DINDiff
+[![DOI](https://zenodo.org/badge/832065698.svg)](https://zenodo.org/doi/10.5281/zenodo.13165362)
 
+# DINDiff
 
 This is the source code for the manuscript:
 
