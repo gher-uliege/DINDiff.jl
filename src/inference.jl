@@ -98,8 +98,6 @@ BSON.@load model_fname m
 params = JSON3.read(joinpath(dirname(model_fname),"params.json"))
 ntime_win = get(params,:ntime_win,1)
 
-
-#auxdata_loader = nothing
 auxdata_loader = AuxData3(
     (lon,lat,time),(Δlon,Δlat,Δtime),data_cv,
     ntime_win;
