@@ -1,3 +1,5 @@
+# import the modules
+
 import CUDA
 using BSON
 using DataStructures
@@ -11,15 +13,47 @@ using Random
 using Statistics
 using Test
 
+# name of the dataset (test or dev)
+dataset = "test"
+
+# variable name
+varname = "CHL"
+
+# training data
+fname_train = expanduser("~/Data/NECCTON_Black_Sea/CHL2/cmems_obs-oc_blk_bgc-plankton_my_l3-olci-300m_P1D/patches_64_64_0.8.nc")
+
+# data to be reconstructed
+fname_orig = expanduser("~/Data/NECCTON_Black_Sea/CHL2/cmems_obs-oc_blk_bgc-plankton_my_l3-olci-300m_P1D/$(dataset)_log10.nc")
+
+# directory with the experiments
+expdir = expanduser("~/Data/NECCTON_Black_Sea/CHL2/cmems_obs-oc_blk_bgc-plankton_my_l3-olci-300m_P1D/")
+
+# timestamp of the used model and epoch
+timestamp = "2023-12-06T152517"
+epoch = 100
+
+# number of ensemble members to compute and compte the mean and standard
+# deviation
+Nsample = 64
+
+# number of ensemble members to keep
+Nsample_keep = 64
+
+# resolution of the dataset
+# (longitude and latitude are sadly stored in the netcdf file
+# as single precision floats with is insufficient for a 300 m resolution
+# dataset)
+Δlon = 0.0037530265
+Δlat = 0.0026990548
+Δtime = Day(1)
+
+
+#---
 
 include("diffusion_model.jl")
 CUDA.allowscalar(false)
 
-dataset = "test"
-fname_orig = "/home/abarth/Data/NECCTON_Black_Sea/CHL2/cmems_obs-oc_blk_bgc-plankton_my_l3-olci-300m_P1D/$(dataset)_log10.nc"
 fname_cv = replace(fname_orig,".nc" => "_add_clouds.nc")
-varname = "CHL"
-
 
 ds = NCDataset(fname_orig)
 data_orig = nomissing(ds[varname][:,:,:],NaN)
@@ -35,53 +69,22 @@ latf = repeat(ds["lat"][:],inner=(1,size(data_cv,4)))
 time = ds["time"][:];
 
 
-
-fname_train = expanduser("~/Data/NECCTON_Black_Sea/CHL2/cmems_obs-oc_blk_bgc-plankton_my_l3-olci-300m_P1D/patches_64_64_0.8.nc")
 ds_train = NCDataset(fname_train)
 lon_range = extrema(ds_train["lon"][:,:])
 lat_range = extrema(ds_train["lat"][:,:])
-
-#debug
-# lonf = ds_train["lon"][:,:]
-# latf = ds_train["lat"][:,:]
-# time = ds_train["time"][:];
-# data_cv = nomissing(ds_train[varname][:,:,:],NaN)
-# data_cv = reshape(data_cv,(size(data_cv,1),size(data_cv,2),1,size(data_cv,3)))
 close(ds_train)
 
-#lon[2,1]-lon[1,1]
-#lat[2,1]-lat[1,1]
-
-# yes, the resolution are not round values
-Δlon = 0.0037530265
-Δlat = 0.0026990548
-Δtime = Day(1)
 
 lon = round.(Int, (lonf .- Δlon/2) / Δlon) * Δlon;
 lat = round.(Int, (latf .- Δlat/2) / Δlat) * Δlat;
-
 
 pi = PatchIndex1((lon,lat,time),(Δlon,Δlat,Δtime));
 
 sz = size(data_cv)[1:2]
 
-epochs = 20:20:100
-#epochs = 60:20:100
-
-expdir = "/home/abarth/mnt/milan/Data/NECCTON_Black_Sea/CHL2/cmems_obs-oc_blk_bgc-plankton_my_l3-olci-300m_P1D/"
-
-timestamp = "2023-12-06T152517" # best
-epoch = 100
-
-timestamp = "2023-12-04T163318"
-epoch = 20
-
-
-Nsample_keep = 64
-
 epoch_str = @sprintf("%05d",epoch)
 
-model_fname = "/home/abarth/mnt/milan/Data/NECCTON_Black_Sea/CHL2/cmems_obs-oc_blk_bgc-plankton_my_l3-olci-300m_P1D/$timestamp/model-checkpoint-$epoch_str.bson"
+model_fname = joinpath(expdir,"$timestamp/model-checkpoint-$epoch_str.bson")
 
 fname_cv_out = replace(model_fname,".bson" => "") * "_" * replace(basename(fname_cv),".nc" => "log10_filled.nc")
 fname_cv_stat = replace(model_fname,".bson" => "") * "_" * replace(basename(fname_cv),".nc" => "log10_filled-$varname.json")
@@ -106,10 +109,8 @@ auxdata_loader = AuxData3(
 
 ds = NCDataset(fname_cv,"r")
 
+fname_cv_out = "TESTTEST.nc"
 isfile(fname_cv_out) && rm(fname_cv_out)
-
-#varname2 = varname * "_log"
-varname2 = varname
 
 dsout = NCDataset(fname_cv_out,"c")
 
@@ -129,19 +130,19 @@ nctime = defVar(dsout,"time", Float64, ("time",), attrib = OrderedDict(
     "units"                     => "days since 1970-01-01",
 ))
 
-ncdata = defVar(dsout,varname2, Float32, ("lon", "lat", "time"), attrib = OrderedDict(
+ncdata = defVar(dsout,varname, Float32, ("lon", "lat", "time"), attrib = OrderedDict(
     "_FillValue"                => Float32(-9999.0),
 ))
 
 
 if Nsample_keep > 0
     dsout.dim["sample"] = Nsample_keep
-    ncdatasample = defVar(dsout,varname2 * "_sample", Float32, ("lon", "lat", "time", "sample"), attrib = OrderedDict(
+    ncdatasample = defVar(dsout,varname * "_sample", Float32, ("lon", "lat", "time", "sample"), attrib = OrderedDict(
         "_FillValue"                => Float32(-9999.0),
     ))
 end
 
-ncdataerror = defVar(dsout,varname2 * "_error", Float32, ("lon", "lat", "time"), attrib = OrderedDict(
+ncdataerror = defVar(dsout,varname * "_error", Float32, ("lon", "lat", "time"), attrib = OrderedDict(
     "_FillValue"                => Float32(-9999.0),
 ))
 
@@ -157,11 +158,8 @@ nctime[:] = ds["time"][:]
 
 close(ds)
 
-
-#---
-
+# number of steps
 T = length(beta)
-Nsample = 64
 device = gpu
 model = m |> device
 
@@ -173,6 +171,7 @@ dd = Dataset6(data_cv,rng,T,train_mean,train_std,device,alpha_bar,auxdata_loader
 
 ntimes = 1:size(data_cv,4)
 
+# time loop
 for n = ntimes
     local x0
     local xc
@@ -189,7 +188,7 @@ for n = ntimes
 
 
     if any(isnan,xc)
-        @warn "NaN is reconstruction at $n"
+        @warn "NaN in reconstruction at step $n"
         open(fname_cv_stat,"w") do f
             JSON3.pretty(f,OrderedDict(
             "cvrms" => 9999
@@ -214,5 +213,3 @@ for n = ntimes
 end
 
 close(dsout)
-
-
