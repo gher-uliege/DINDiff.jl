@@ -51,7 +51,6 @@ Nsample_keep = 64
 
 #---
 
-include("diffusion_model.jl")
 CUDA.allowscalar(false)
 
 fname_cv = replace(fname_orig,".nc" => "_add_clouds.nc")
