@@ -20,6 +20,15 @@ cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
 
 [compat]
 julia = "1.9"
+BSON = "0.3"
+CUDA = "5.2"
+DataStructures = "0.18"
+Flux = "0.14"
+JSON3 = "1"
+MLUtils = "0.4"
+NCDatasets = "0.14"
+cuDNN = "1"
+
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
