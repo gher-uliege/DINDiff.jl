@@ -180,7 +180,7 @@ skipnan(T,x) = Iterators.map(T,Iterators.filter(!isnan, x))
 Save the trained `model` in `dirn`
 """
 function savemodel(model,dirn,epoch::Integer,train_mean,train_std,beta,losses=[])
-    model_fname = joinpath(dirn,"model-checkpoint-" * @sprintf("%05d",epoch) * ".bson")
+    model_fname = joinpath(dirn,"model-checkpoint-" * @sprintf("%05d",epoch) * ".jld2")
     savemodel(model,model_fname,train_mean,train_std,beta,losses)
 end
 

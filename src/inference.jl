@@ -84,8 +84,8 @@ epoch_str = @sprintf("%05d",epoch)
 
 model_fname = joinpath(expdir,"$timestamp/model-checkpoint-$epoch_str.jld2")
 
-fname_cv_out = replace(model_fname,".bson" => "") * "_" * replace(basename(fname_cv),".nc" => "log10_filled.nc")
-fname_cv_stat = replace(model_fname,".bson" => "") * "_" * replace(basename(fname_cv),".nc" => "log10_filled-$varname.json")
+fname_cv_out = replace(model_fname,".jld2" => "") * "_" * replace(basename(fname_cv),".nc" => "log10_filled.nc")
+fname_cv_stat = replace(model_fname,".jld2" => "") * "_" * replace(basename(fname_cv),".nc" => "log10_filled-$varname.json")
 
 @show model_fname
 
