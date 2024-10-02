@@ -26,7 +26,7 @@ device = gpu
 # NetCDF file with the training data
 fname = expanduser("~/Data/NECCTON_Black_Sea/CHL2/cmems_obs-oc_blk_bgc-plankton_my_l3-olci-300m_P1D/patches_64_64_0.8.nc")
 batch_size = 60
-batch_size = 2 # test
+#batch_size = 2 # test
 varname = "CHL"
 checkpoint_epoch = 20
 nb_epochs = 140
