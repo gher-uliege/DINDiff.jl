@@ -190,7 +190,9 @@ function savemodel(model,model_fname,train_mean,train_std,beta,losses=[])
 end
 
 function _savemodel(m,model_fname,train_mean,train_std,beta,losses=[])
-    BSON.@save model_fname m train_mean train_std beta losses
+    model_state = Flux.state(m);
+    jldsave(model_fname; model_state, train_mean, train_std, beta, losses)
+    #BSON.@save model_fname m train_mean train_std beta losses
 end
 
 function snapgrid(lon,Δlon)

@@ -1,7 +1,7 @@
 # import the modules
 
 import CUDA
-using BSON
+using JLD2
 using DataStructures
 using Dates
 using Flux
@@ -82,15 +82,28 @@ sz = size(data_cv)[1:2]
 
 epoch_str = @sprintf("%05d",epoch)
 
-model_fname = joinpath(expdir,"$timestamp/model-checkpoint-$epoch_str.bson")
+model_fname = joinpath(expdir,"$timestamp/model-checkpoint-$epoch_str.jld2")
 
 fname_cv_out = replace(model_fname,".bson" => "") * "_" * replace(basename(fname_cv),".nc" => "log10_filled.nc")
 fname_cv_stat = replace(model_fname,".bson" => "") * "_" * replace(basename(fname_cv),".nc" => "log10_filled-$varname.json")
 
 @show model_fname
 
-BSON.@load model_fname beta train_mean train_std losses
-BSON.@load model_fname m
+#=
+paramsname = joinpath(resdir,"params.json")
+
+=#
+#model = ...
+model_state = JLD2.load(model_fname, "model_state");
+beta = JLD2.load(model_fname, "beta");
+train_mean = JLD2.load(model_fname, "train_mean");
+train_std = JLD2.load(model_fname, "train_std");
+losses = JLD2.load(model_fname, "losses");
+
+Flux.loadmodel!(model, model_state);
+
+#BSON.@load model_fname beta train_mean train_std losses
+#BSON.@load model_fname m
 
 
 params = JSON3.read(joinpath(dirname(model_fname),"params.json"))

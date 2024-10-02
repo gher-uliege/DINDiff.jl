@@ -2,7 +2,7 @@
 # all dependencies are assumed to be already installed
 
 import CUDA
-using BSON
+using JLD2
 using DataStructures
 using Dates
 using Flux
@@ -93,8 +93,7 @@ auxdata_loader = AuxData(
 beta = collect(LinRange(0, max_beta, T))
 
 mkpath(resdir)
-model_fname = joinpath(resdir,"model_diffusion.bson")
-model_parameters_fname = joinpath(resdir,"model_parameters_diffusion.bson")
+model_fname = joinpath(resdir,"model_diffusion.jld2")
 
 cp(@__FILE__,joinpath(resdir,basename(@__FILE__)))
 
@@ -182,9 +181,5 @@ alpha, alpha_bar, sigma, losses = @time train!(
     train_std = train_std,
 )
 
-m = cpu(model)
-BSON.@save model_fname m alpha train_mean train_std beta losses
 
-model_parameters = cpu.(Flux.params(model));
-
-BSON.@save model_parameters_fname model_parameters alpha train_mean train_std beta losses
+savemodel(model,model_fname,train_mean,train_std,beta,losses)
