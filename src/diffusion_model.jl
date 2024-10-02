@@ -246,6 +246,7 @@ struct DatasetLoader{T,N,Trng,Tdevice,Ta,Taux}
     training::Bool
 end
 
+import MLUtils: numobs, getobs, getobs!
 numobs(d::DatasetLoader) = size(d.train_input)[end]
 
 function getobs_orig(d::DatasetLoader,index::Union{AbstractVector,Integer})
