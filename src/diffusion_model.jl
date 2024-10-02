@@ -309,7 +309,7 @@ function getobs(d::DatasetLoader,index::Union{AbstractVector,Integer})
 
     t = zeros(Int16,size(x0)) |> device
     t .= device(rand(rng,1:T,1,1,1,length(index)));
-    t .= device(rand(rng,200:200,1,1,1,length(index)));
+    #t .= device(rand(rng,200:200,1,1,1,length(index)));
     #@show cpu(t)[1],T
     t[.!has_no_data] .= 1 # at uncorrupted stage
     t[has_no_data_orig] .= T # at fully corrupted stage
