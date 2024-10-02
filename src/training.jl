@@ -12,8 +12,8 @@ using Printf
 using Random
 using Statistics
 using Test
-
-include("diffusion_model.jl")
+using DINDiff: ncload, extend, train!, DatasetLoader,
+    AuxData, naux_data, genmodel, skipnan, savemodel, noise_schedule
 
 CUDA.allowscalar(false)
 
