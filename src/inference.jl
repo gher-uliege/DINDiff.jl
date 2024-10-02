@@ -12,6 +12,7 @@ using Printf
 using Random
 using Statistics
 using Test
+using DINDiff: genmodel, generate_cond, getobs_orig, AuxData
 
 # name of the dataset (test or dev)
 dataset = "test"
