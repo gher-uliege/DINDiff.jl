@@ -144,6 +144,8 @@ open(paramsname,"w") do f
         "ntime_win" => ntime_win,
         "train_mean" => train_mean,
         "train_std" => train_std,
+        "in_channels" => in_channels,
+        "out_channels" => out_channels,
     ))
 end
 

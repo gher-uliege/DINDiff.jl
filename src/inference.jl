@@ -89,11 +89,24 @@ fname_cv_stat = replace(model_fname,".jld2" => "") * "_" * replace(basename(fnam
 
 @show model_fname
 
-#=
-paramsname = joinpath(resdir,"params.json")
 
-=#
-#model = ...
+activation_functions = Dict((a => getfield(Flux,a)) for a in (:relu,:selu,:gelu))
+
+params = JSON3.read(joinpath(dirname(model_fname),"params.json"))
+kernel_size = params.kernel_size
+activation = activation_functions[Symbol(params.activation)]
+in_channels = params.in_channels
+out_channels = params.out_channels
+channels = Tuple(out_channels)
+ntime_win = get(params,:ntime_win,1)
+
+model = genmodel(
+    kernel_size,activation;
+    in_channels = in_channels,
+    out_channels = out_channels,
+    channels = channels);
+
+
 model_state = JLD2.load(model_fname, "model_state");
 beta = JLD2.load(model_fname, "beta");
 train_mean = JLD2.load(model_fname, "train_mean");
@@ -106,8 +119,6 @@ Flux.loadmodel!(model, model_state);
 #BSON.@load model_fname m
 
 
-params = JSON3.read(joinpath(dirname(model_fname),"params.json"))
-ntime_win = get(params,:ntime_win,1)
 
 #auxdata_loader = nothing
 auxdata_loader = AuxData(
@@ -170,7 +181,7 @@ close(ds)
 # number of steps
 T = length(beta)
 device = gpu
-model = m |> device
+model = model |> device
 
 alpha,alpha_bar,sigma = noise_schedule(beta)
 
