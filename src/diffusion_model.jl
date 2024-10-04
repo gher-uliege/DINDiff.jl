@@ -416,12 +416,14 @@ end
 Transform the data in-place using the function `trans` ignoring
 fillvalue `fv` and negative values.
 """
-function prep_data!(data_input,fv,trans)
+function prep_data!(data_input,fv,trans; isvalid = nothing)
     @inbounds  for i in eachindex(data_input)
         if data_input[i] == fv
             data_input[i] = NaN
-        elseif data_input[i] <= 0
-            data_input[i] = NaN
+        elseif !isnothing(isvalid)
+            if !isvalid(data_input[i])
+                data_input[i] = NaN
+            end
         else
             data_input[i] = trans(data_input[i])
         end
@@ -436,7 +438,7 @@ end
 Load the variable `varname` from the file `fname_train` and apply the
 transformation `trans` (default `log10`).
 """
-function ncload(fname_train,varname,trans=log10)
+function ncload(fname_train,varname,trans=log10; isvalid = nothing)
 
     ds = NCDataset(fname_train)
     data_sz = size(ds[varname])
@@ -446,7 +448,7 @@ function ncload(fname_train,varname,trans=log10)
                                train_input,:,:,:)
 
     fv = get(ds[varname].attrib,"_FillValue",NaN)
-    prep_data!(train_input,fv,trans)
+    prep_data!(train_input,fv,trans; isvalid)
     return train_input
 end
 

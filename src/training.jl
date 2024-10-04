@@ -25,9 +25,26 @@ device = gpu
 
 # NetCDF file with the training data
 fname = expanduser("~/Data/NECCTON_Black_Sea/CHL2/cmems_obs-oc_blk_bgc-plankton_my_l3-olci-300m_P1D/patches_64_64_0.8.nc")
-batch_size = 60
-#batch_size = 2 # test
 varname = "CHL"
+datadir = dirname(fname)
+datatrans = log10
+isvalid = >(0)
+
+
+
+
+
+#=
+fname = expanduser("~/Data/Med/clear_patches_cmems_obs-sst_glo_phy_my_l3s_P1D-m.nc")
+varname = "adjusted_sea_surface_temperature"
+datadir = expanduser("~/tmp/SST-diffusion-model")
+datatrans = identity
+isvalid = nothing
+=#
+
+
+
+batch_size = 60
 checkpoint_epoch = 20
 nb_epochs = 140
 nb_epochs =  20
@@ -54,32 +71,36 @@ resdir = joinpath(datadir,timestamp)
 
 @info "loading data"
 
-train_input = ncload(fname,varname);
+train_input = ncload(fname,varname,datatrans; isvalid);
 train_input = extend(train_input);
 
 @info "sample size $(size(train_input))"
 
 ds = NCDataset(fname);
-lonf = ds["lon"][:,:];
-latf = ds["lat"][:,:];
+lon = ds["lon"][:,:];
+lat = ds["lat"][:,:];
 time = ds["time"][:];
 
-#lon[2,1]-lon[1,1]
-#lat[2,1]-lat[1,1]
 
-# partical fixes for the used CMEMS data cmems_obs-oc_blk_bgc-plankton_my_l3-olci-300m_P1D
-# yes, the resolution are not round values
-Δlon = 0.0037530265
-Δlat = 0.0026990548
-Δtime = Day(1)
+if occursin("cmems_obs-oc_blk_bgc-plankton_my_l3-olci-300m_P1D",fname)
+    # single precision
+    lonf = lon
+    latf = lat
 
-lon = round.(Int, (lonf .- Δlon/2) / Δlon) * Δlon;
-lat = round.(Int, (latf .- Δlat/2) / Δlat) * Δlat;
+    # partical fixes for the used CMEMS data cmems_obs-oc_blk_bgc-plankton_my_l3-olci-300m_P1D
+    # yes, the resolution are not round values
+    Δlon = 0.0037530265
+    Δlat = 0.0026990548
+    Δtime = Day(1)
 
-@debug begin
-    using Test
-    @test Float32.(lon) ≈ Float32.(lonf)
-    @test Float32.(lat) ≈ Float32.(latf)
+    lon = round.(Int, (lonf .- Δlon/2) / Δlon) * Δlon;
+    lat = round.(Int, (latf .- Δlat/2) / Δlat) * Δlat;
+
+    @debug begin
+        using Test
+        @test Float32.(lon) ≈ Float32.(lonf)
+        @test Float32.(lat) ≈ Float32.(latf)
+    end
 end
 
 sz = size(train_input)[1:2]
