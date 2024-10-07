@@ -22,7 +22,7 @@ cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
 [compat]
 julia = "1.10"
 BSON = "0.3"
-CUDA = "5.2"
+CUDA = "5.5"
 DataStructures = "0.18"
 Flux = "0.14"
 JSON3 = "1"
