@@ -122,7 +122,7 @@ Flux.loadmodel!(model, model_state);
 
 #auxdata_loader = nothing
 auxdata_loader = AuxData(
-    (lon,lat,time),(Δlon,Δlat,Δtime),data_cv,
+    (lon,lat,time),data_cv,
     ntime_win;
     lon_range = lon_range,
     lat_range = lat_range,

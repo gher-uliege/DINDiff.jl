@@ -584,6 +584,15 @@ function AuxData(
         pi)
 end
 
+
+function AuxData(coord,train_input,ntime_win; kwargs...)
+    (lon,lat,time) = coord
+    Δlon = lon[2]-lon[1]
+    Δlat = lat[2]-lat[1]
+    Δtime = time[2]-time[1]
+
+    return AuxData(coord,(Δlon,Δlat,Δtime),train_input,ntime_win; kwargs...)
+end
 #naux_data(auxd::AuxData) = 2 + 2 + 2 * (auxd.ntime_win-1)
 #naux_data(auxd::AuxData) = 2 * (auxd.ntime_win-1)
 naux_data(auxd::AuxData) = (auxd.ntime_win-1)
