@@ -40,13 +40,6 @@ Nsample = 64
 # number of ensemble members to keep
 Nsample_keep = 64
 
-# resolution of the dataset
-# (longitude and latitude are sadly stored in the netcdf file
-# as single precision floats with is insufficient for a 300 m resolution
-# dataset)
-Δlon = 0.0037530265
-Δlat = 0.0026990548
-Δtime = Day(1)
 
 
 #---
@@ -64,8 +57,8 @@ close(ds)
 ds = NCDataset(fname_cv)
 data_cv = nomissing(ds[varname][:,:,:],NaN)
 data_cv = reshape(data_cv,(size(data_cv,1),size(data_cv,2),1,size(data_cv,3)))
-lonf = repeat(ds["lon"][:],inner=(1,size(data_cv,4)))
-latf = repeat(ds["lat"][:],inner=(1,size(data_cv,4)))
+lon = repeat(ds["lon"][:],inner=(1,size(data_cv,4)))
+lat = repeat(ds["lat"][:],inner=(1,size(data_cv,4)))
 time = ds["time"][:];
 
 
@@ -74,9 +67,22 @@ lon_range = extrema(ds_train["lon"][:,:])
 lat_range = extrema(ds_train["lat"][:,:])
 close(ds_train)
 
+if occursin("cmems_obs-oc_blk_bgc-plankton_my_l3-olci-300m_P1D",fname)
+    # single precision
+    lonf = lon
+    latf = lat
 
-lon = round.(Int, (lonf .- Δlon/2) / Δlon) * Δlon;
-lat = round.(Int, (latf .- Δlat/2) / Δlat) * Δlat;
+    # resolution of the dataset
+    # (longitude and latitude are sadly stored in the netcdf file
+    # as single precision floats with is insufficient for a 300 m resolution
+    # dataset)
+    Δlon = 0.0037530265
+    Δlat = 0.0026990548
+    Δtime = Day(1)
+
+    lon = round.(Int, (lonf .- Δlon/2) / Δlon) * Δlon;
+    lat = round.(Int, (latf .- Δlat/2) / Δlat) * Δlat;
+end
 
 sz = size(data_cv)[1:2]
 
