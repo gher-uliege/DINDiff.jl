@@ -195,6 +195,35 @@ function _savemodel(m,model_fname,train_mean,train_std,beta,losses=[])
     #BSON.@save model_fname m train_mean train_std beta losses
 end
 
+function loadmodel(model_fname)
+    activation_functions = Dict((a => getfield(Flux,a)) for a in (:relu,:selu,:gelu))
+
+    params = JSON3.read(joinpath(dirname(model_fname),"params.json"))
+    kernel_size = params.kernel_size
+    activation = activation_functions[Symbol(params.activation)]
+    in_channels = params.in_channels
+    out_channels = params.out_channels
+    channels = Tuple(params.channels)
+    ntime_win = get(params,:ntime_win,1)
+
+    model = genmodel(
+        kernel_size,activation;
+        in_channels = in_channels,
+        out_channels = out_channels,
+        channels = channels);
+
+    beta = JLD2.load(model_fname, "beta");
+    train_mean = JLD2.load(model_fname, "train_mean");
+    train_std = JLD2.load(model_fname, "train_std");
+    losses = JLD2.load(model_fname, "losses");
+
+    model_state = JLD2.load(model_fname, "model_state");
+    Flux.loadmodel!(model, model_state);
+
+    return (model,(; beta, train_mean, train_std, losses, ntime_win,
+                   in_channels, out_channels, channels))
+end
+
 function snapgrid(lon,Δlon)
     lon0 = minimum(lon);
     ii = round.(Int,(lon[1,:] .- lon0) ./ (Δlon * size(lon,1)))

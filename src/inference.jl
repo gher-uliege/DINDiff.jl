@@ -12,7 +12,7 @@ using Printf
 using Random
 using Statistics
 using Test
-using DINDiff: genmodel, generate_cond, getobs_orig, AuxData
+using DINDiff: genmodel, generate_cond, getobs_orig, AuxData, loadmodel
 
 # name of the dataset (test or dev)
 dataset = "test"
@@ -89,36 +89,15 @@ fname_cv_stat = replace(model_fname,".jld2" => "") * "_" * replace(basename(fnam
 
 @show model_fname
 
+model,params = loadmodel(model_fname);
 
-activation_functions = Dict((a => getfield(Flux,a)) for a in (:relu,:selu,:gelu))
-
-params = JSON3.read(joinpath(dirname(model_fname),"params.json"))
-kernel_size = params.kernel_size
-activation = activation_functions[Symbol(params.activation)]
-in_channels = params.in_channels
-out_channels = params.out_channels
-channels = Tuple(out_channels)
-ntime_win = get(params,:ntime_win,1)
-
-model = genmodel(
-    kernel_size,activation;
-    in_channels = in_channels,
-    out_channels = out_channels,
-    channels = channels);
-
-
-model_state = JLD2.load(model_fname, "model_state");
-beta = JLD2.load(model_fname, "beta");
-train_mean = JLD2.load(model_fname, "train_mean");
-train_std = JLD2.load(model_fname, "train_std");
-losses = JLD2.load(model_fname, "losses");
-
-Flux.loadmodel!(model, model_state);
+ntime_win = params.ntime_win
+beta = params.beta
+train_mean = params.train_mean
+train_std = params.train_std
 
 #BSON.@load model_fname beta train_mean train_std losses
 #BSON.@load model_fname m
-
-
 
 #auxdata_loader = nothing
 auxdata_loader = AuxData(
