@@ -29,40 +29,46 @@ varname = "CHL"
 datadir = dirname(fname)
 datatrans = log10
 isvalid = >(0)
+datadir = dirname(fname)
 
 
 
 
-
-#=
-fname = expanduser("~/Data/Med/clear_patches_cmems_obs-sst_glo_phy_my_l3s_P1D-m.nc")
-varname = "adjusted_sea_surface_temperature"
+fname = expanduser("~/Data/Global/MODIS/patches_sst_0.5_short2.nc")
+varname = "sst"
 datadir = expanduser("~/tmp/SST-diffusion-model")
 datatrans = identity
 isvalid = nothing
-=#
 
 
 
 batch_size = 60
 checkpoint_epoch = 20
 nb_epochs = 140
-nb_epochs =  20
+#nb_epochs =  20
 learning_rate = 0.00018967415117200598
 kernel_size = 3
 T = 600
 activation = relu
 max_beta = 0.02031910864124268;
 channels = (16,32,64,128,256,256)
+#channels = (16,32,64,128,256)
 learning_rate_drop_epoch = 70
 learning_rate_factor = 0.8369710273382387
 ntime_win = 1
+
+# quick test
+#checkpoint_epoch = 1
+#nb_epochs =  2
+#T = 2
+#channels = (16,32)
+# end quick test
 
 @info("$timestamp",batch_size,varname,checkpoint_epoch,nb_epochs,learning_rate,
       kernel_size,T,activation,max_beta,channels,learning_rate_drop_epoch,
       learning_rate_factor,ntime_win)
 
-datadir = dirname(fname)
+#datadir = dirname(fname)
 
 resdir = joinpath(datadir,timestamp)
 @show resdir
