@@ -1,3 +1,55 @@
+
+
+
+
+function DatasetLoader((lon,lat,time),(Δlon,Δlat,Δtime), data_cv, beta;
+                       training = false,
+                       ntime_win = 1,
+                       device = cpu,
+                       train_mean = 0,
+                       train_std = 1,
+                       rng = Random.GLOBAL_RNG,
+                       kwargs...)
+
+    #auxdata_loader = nothing
+    auxdata_loader = AuxData(
+        (lon,lat,time),(Δlon,Δlat,Δtime),data_cv,
+        ntime_win;
+        kwargs...)
+
+
+    # number of steps
+    T = length(beta)
+
+    alpha,alpha_bar,sigma = noise_schedule(beta)
+    dd = DatasetLoader(data_cv,rng,T,train_mean,train_std,device,alpha_bar,auxdata_loader,training)
+
+    return dd
+end
+
+function DatasetLoader(fname_cv::AbstractString, varname, beta;
+                       Δtime = Day(1), # FIXME
+                       tindex = Colon(), kwargs...)
+    ds = NCDataset(fname_cv)
+    ds = view(ds,time = tindex)
+    data_cv = nomissing(ds[varname][:,:,:],NaN)
+    data_cv = reshape(data_cv,(size(data_cv,1),size(data_cv,2),1,size(data_cv,3)))
+    #lon = repeat(ds["lon"][:],inner=(1,size(data_cv,4)))
+    #lat = repeat(ds["lat"][:],inner=(1,size(data_cv,4)))
+    lon = ds["lon"][:,:];
+    lat = ds["lat"][:,:];
+    time = ds["time"][:];
+
+    Δlon = lon[2]-lon[1]
+    Δlat = lat[2]-lat[1]
+
+    dd = DatasetLoader((lon,lat,time),(Δlon,Δlat,Δtime), data_cv, beta; kwargs...)
+
+    return dd
+end
+
+
+
 function ncoutput((lon,lat,time),fname_cv_out, varname; Nsample_keep = 0)
 
     isfile(fname_cv_out) && rm(fname_cv_out)
