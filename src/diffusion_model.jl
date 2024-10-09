@@ -470,12 +470,23 @@ transformation `trans` (default `log10`).
 function ncload(fname_train,varname,trans=log10; isvalid = nothing)
 
     ds = NCDataset(fname_train)
+
     data_sz = size(ds[varname])
+
+    #tindex = 1:10000
+    tindex = 1:data_sz[end]
+    println("load subset $tindex")
+    train_input = zeros(Float32,(data_sz[1],data_sz[2],1,length(tindex)));
+
+    @inbounds NCDatasets.load!(ds[varname].var,
+                               train_input,:,:,tindex)
+
+#=
     train_input = zeros(Float32,(data_sz[1],data_sz[2],1,data_sz[3]));
 
     @inbounds NCDatasets.load!(ds[varname].var,
                                train_input,:,:,:)
-
+=#
     fv = get(ds[varname].attrib,"_FillValue",NaN)
     prep_data!(train_input,fv,trans; isvalid)
     return train_input
