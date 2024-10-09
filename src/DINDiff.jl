@@ -12,5 +12,6 @@ using Statistics
 using JLD2
 
 include("diffusion_model.jl")
+include("data.jl")
 
 end
