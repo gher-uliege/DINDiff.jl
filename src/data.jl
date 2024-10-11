@@ -100,5 +100,5 @@ function ncoutput((lon,lat,time),fname_cv_out, varname; Nsample_keep = 0)
     end
     nctime[:] = time[:]
 
-    return (ncdata,ncdatasample,ncdataerror)
+    return (dsout,ncdata,ncdatasample,ncdataerror)
 end

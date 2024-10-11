@@ -475,7 +475,7 @@ function ncload(fname_train,varname,trans=log10; isvalid = nothing)
 
     #tindex = 1:10000
     tindex = 1:data_sz[end]
-    println("load subset $tindex")
+#    println("load subset $tindex")
     train_input = zeros(Float32,(data_sz[1],data_sz[2],1,length(tindex)));
 
     @inbounds NCDatasets.load!(ds[varname].var,

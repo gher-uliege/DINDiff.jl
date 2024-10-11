@@ -146,7 +146,7 @@ train_std = params.train_std
 
 ds_all = NCDataset(fname_cv,"r")
 ds = view(ds_all,time = tindex)
-(ncdata,ncdatasample,ncdataerror) = DINDiff.ncoutput(
+(dsout,ncdata,ncdatasample,ncdataerror) = DINDiff.ncoutput(
     (ds["lon"],ds["lat"],ds["time"]),fname_cv_out, varname; Nsample_keep)
 
 close(ds_all)
@@ -216,7 +216,7 @@ for n = ntimes
     mx = mean(xc,dims=4)[:,:,1,1]
     stdx = std(xc,dims=4)[:,:,1,1]
 
-    @show n,size(data_cv,4),extrema(mx)
+    @show n,length(ntimes),extrema(mx)
 
     ncdata[:,:,n] = mx
     ncdataerror[:,:,n] = stdx
