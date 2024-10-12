@@ -1,6 +1,8 @@
 # load all modules
 # all dependencies are assumed to be already installed
 
+using Pkg
+Pkg.activate("/home/abarth/.julia/dev/DINDiff")
 import CUDA
 using JLD2
 using DataStructures
@@ -34,7 +36,7 @@ datadir = dirname(fname)
 
 
 
-fname = expanduser("~/Data/Global/MODIS/patches_sst_0.5_short2.nc")
+fname = expanduser("~/Data/Global/MODIS/patches_sst_0.25_train.nc")
 varname = "sst"
 datadir = expanduser("~/tmp/SST-diffusion-model")
 datatrans = identity
@@ -49,6 +51,7 @@ nb_epochs = 140
 learning_rate = 0.00018967415117200598
 kernel_size = 3
 T = 600
+#T = 100
 activation = relu
 max_beta = 0.02031910864124268;
 channels = (16,32,64,128,256,256)
@@ -128,17 +131,17 @@ model_fname = joinpath(resdir,"model_diffusion.jld2")
 
 cp(@__FILE__,joinpath(resdir,basename(@__FILE__)))
 
-#for fn in ["diffusion_model.jl","inference.jl"]
-#    cp(joinpath(dirname(@__FILE__),fn),joinpath(resdir,fn))
-#end
+for fn in ["diffusion_model.jl","inference.jl"]
+    cp(joinpath(dirname(@__FILE__),fn),joinpath(resdir,fn))
+end
 
 @info "generate model"
 
 in_channels = 1
 out_channels = 1
 if auxdata_loader !== nothing
-    in_channels += 2*naux_data(auxdata_loader)
-    out_channels += naux_data(auxdata_loader)
+    in_channels += naux_data(auxdata_loader)
+#    out_channels += naux_data(auxdata_loader)
 end
 
 model = genmodel(
@@ -195,8 +198,8 @@ dl = Flux.DataLoader(dd; batchsize = batch_size, shuffle=true,
                      partial = false);
 
 # test run
-(xt,tt,eps,mask) = first(dl)
-ϵ = model((xt, tt))
+(xt,tt,eps,mask) = first(dl);
+ϵ = model((xt, tt));
 
 alpha, alpha_bar, sigma, losses = @time train!(
     model,dl;
@@ -216,3 +219,4 @@ alpha, alpha_bar, sigma, losses = @time train!(
 
 
 savemodel(model,model_fname,train_mean,train_std,beta,losses)
+

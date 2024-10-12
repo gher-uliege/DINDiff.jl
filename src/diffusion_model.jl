@@ -295,26 +295,28 @@ function getobs_orig(d::DatasetLoader,index::Union{AbstractVector,Integer})
         x_mask_cpu = zeros(Float32,size(x0_cpu))
     end
 
+    x0_cpu = (x0_cpu .- d.train_mean) ./ d.train_std
+
+    aux_data = nothing
+
     if auxdata_loader !== nothing
         aux_data = zeros(Float32,sz...,naux_data(auxdata_loader),length(index));
         load_aux_data!(auxdata_loader,index,aux_data)
 
-        # do not mask additional data for other time instances
-        aux_data_mask_cpu = zeros(Float32,size(aux_data))
+        # # do not mask additional data for other time instances
+        # aux_data_mask_cpu = zeros(Float32,size(aux_data))
 
-        # try
-        for k = 1:size(aux_data,3)
-            index_mask = rand(rng,1:size(d.train_input,4),length(index))
-            aux_data_mask_cpu[:,:,k,:] = d.train_input[:,:,1,index_mask]
-        end
+        # # try
+        # for k = 1:size(aux_data,3)
+        #     index_mask = rand(rng,1:size(d.train_input,4),length(index))
+        #     aux_data_mask_cpu[:,:,k,:] = d.train_input[:,:,1,index_mask]
+        # end
 
-        x0_cpu = cat(x0_cpu,aux_data,dims=3)
-        x_mask_cpu = cat(x_mask_cpu,aux_data_mask_cpu,dims=3)
+        #x_mask_cpu = cat(x_mask_cpu,aux_data_mask_cpu,dims=3)
     end
 
-    x0_cpu = (x0_cpu .- d.train_mean) ./ d.train_std
 
-    return (x0_cpu,x_mask_cpu)
+    return (x0_cpu,x_mask_cpu,aux_data)
 end
 
 function getobs(d::DatasetLoader,index::Union{AbstractVector,Integer})
@@ -324,10 +326,11 @@ function getobs(d::DatasetLoader,index::Union{AbstractVector,Integer})
     rng = d.rng
     sz = size(d.train_input)[1:2]
 
-    x0_cpu,x_mask_cpu = getobs_orig(d,index)
+    x0_cpu,x_mask_cpu,aux_data_cpu = getobs_orig(d,index)
 
     x0 = x0_cpu |> device
     x_mask = x_mask_cpu |> device
+    aux_data = aux_data_cpu |> device
 
     has_no_data_orig = isnan.(x0)
     # where we pretend there is no data
@@ -348,8 +351,9 @@ function getobs(d::DatasetLoader,index::Union{AbstractVector,Integer})
 
     xt = sqrt.(alpha_bar[t]) .* x0 + sqrt.(1 .- alpha_bar[t]) .* eps
 
-    tt = Float32.((t .- 1) ./ (T .- 1) .- 0.5) |> device
+    tt = Float32.((t .- 1) ./ (T .- 1) .- 0.5f0) |> device
 
+    xt = cat(xt,aux_data,dims=3)
     return (xt,tt,eps,mask)
 end
 
@@ -626,7 +630,8 @@ end
 
 #naux_data(auxd::AuxData) = 2 + 2 + 2 * (auxd.ntime_win-1)
 #naux_data(auxd::AuxData) = 2 * (auxd.ntime_win-1)
-naux_data(auxd::AuxData) = (auxd.ntime_win-1)
+#naux_data(auxd::AuxData) = (auxd.ntime_win-1)
+naux_data(auxd::AuxData) = 2 + 2 + (auxd.ntime_win-1)
 
 normalize(x,x_range) = (x .- x_range[1]) ./ (x_range[2] - x_range[1])
 
@@ -637,13 +642,13 @@ function load_aux_data!(auxd::AuxData,index,aux_data)
     for l = 1:length(index)
         i,j,n = from_lin_index(auxd.pi,l)
 
-        # aux_data[:,:,1,l] .= normalize(auxd.lon[:,index[l]],auxd.lon_range)
-        # aux_data[:,:,2,l] .= normalize(auxd.lat[:,index[l]],auxd.lat_range)'
-        # aux_data[:,:,3,l] .= auxd.cos_time[l]
-        # aux_data[:,:,4,l] .= auxd.sin_time[l]
-        # baseindex = 5
+        aux_data[:,:,1,l] .= normalize(auxd.lon[:,index[l]],auxd.lon_range)
+        aux_data[:,:,2,l] .= normalize(auxd.lat[:,index[l]],auxd.lat_range)'
+        aux_data[:,:,3,l] .= auxd.cos_time[l]
+        aux_data[:,:,4,l] .= auxd.sin_time[l]
+        baseindex = 5
 
-        baseindex = 1
+        #baseindex = 1
 
         for islice = ((1:ntime_win) .- (ntime_win+1)÷2)
             if islice == 0

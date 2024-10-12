@@ -21,24 +21,12 @@ using DINDiff: genmodel, generate_cond, getobs_orig, AuxData, loadmodel, noise_s
 # name of the dataset (test or dev)
 dataset = "test"
 
-# variable name
-varname = "CHL"
-
-# training data
-fname_train = expanduser("~/Data/NECCTON_Black_Sea/CHL2/cmems_obs-oc_blk_bgc-plankton_my_l3-olci-300m_P1D/patches_64_64_0.8.nc")
-
-# data to be reconstructed
-fname_orig = expanduser("~/Data/NECCTON_Black_Sea/CHL2/cmems_obs-oc_blk_bgc-plankton_my_l3-olci-300m_P1D/$(dataset)_log10.nc")
-
-# directory with the experiments
-expdir = expanduser("~/Data/NECCTON_Black_Sea/CHL2/cmems_obs-oc_blk_bgc-plankton_my_l3-olci-300m_P1D/")
-
 # timestamp of the used model and epoch
 #timestamp = "2023-12-06T152517"
 
 
 # SST
-fname = expanduser("~/Data/Global/MODIS/patches_sst_0.5_short2.nc")
+fname = expanduser("~/Data/Global/MODIS/patches_sst_0.25_dev.nc")
 varname = "sst"
 expdir = expanduser("~/tmp/SST-diffusion-model")
 fname_train = fname
@@ -46,7 +34,9 @@ fname_orig = fname_train
 #expdir = dirname(fname_train)
 datatrans = identity
 isvalid = nothing
-timestamp = "2024-10-08T223706"
+#timestamp = "2024-10-08T223706"
+#timestamp = "2024-10-08T212832"
+#timestamp = "2024-10-10T132004"
 
 epoch = 100
 epoch = 140
@@ -108,14 +98,13 @@ if occursin("cmems_obs-oc_blk_bgc-plankton_my_l3-olci-300m_P1D",fname_train)
     lat = round.(Int, (latf .- Δlat/2) / Δlat) * Δlat;
 end
 
-sz = size(data_cv)[1:2]
 
 epoch_str = @sprintf("%05d",epoch)
 
 model_fname = joinpath(expdir,timestamp,"model-checkpoint-$epoch_str.jld2")
 
-fname_cv_out = replace(model_fname,".jld2" => "") * "_" * replace(basename(fname_cv),".nc" => "log10_filled.nc")
-fname_cv_stat = replace(model_fname,".jld2" => "") * "_" * replace(basename(fname_cv),".nc" => "log10_filled-$varname.json")
+fname_cv_out = replace(model_fname,".jld2" => "") * "_" * replace(basename(fname_cv),".nc" => "_filled.nc")
+fname_cv_stat = replace(model_fname,".jld2" => "") * "_" * replace(basename(fname_cv),".nc" => "_filled-$varname.json")
 
 @show model_fname
 
@@ -126,13 +115,6 @@ beta = params.beta
 train_mean = params.train_mean
 train_std = params.train_std
 
-#BSON.@load model_fname beta train_mean train_std losses
-#BSON.@load model_fname m
-
-
-Δlon = lon[2]-lon[1]
-Δlat = lat[2]-lat[1]
-Δtime = Day(1)
 
 # #auxdata_loader = nothing
 # auxdata_loader = AuxData(
@@ -179,14 +161,17 @@ for n = ntimes
     local mx
     local stdx
 
-    x0, = getobs_orig(dd,n)
-    x0 = x0 |> device
+    x0,x_mask,aux_data = device.(getobs_orig(dd,n))
+    x_diff = zeros(size(x0)[1:3]...,Nsample,length(beta));
 
-    x_diff = zeros(size(x0)[1:end-1]...,Nsample,length(beta));
+    #x0 = cat(x0,aux_data,dims=3)
+    #x0 .= x0 .- mean(filter(isfinite,x0))
+
     #x_diff = nothing
 
     xc = generate_cond(
         device, beta, model, train_mean, train_std, x0, Nsample;
+        auxdata = aux_data,
         x_diff = x_diff,
     );
 
@@ -227,3 +212,14 @@ for n = ntimes
 end
 
 close(dsout)
+
+
+
+
+varname = "sst"
+ds = NCDataset(fname_cv; maskingvalue = NaN)
+ds_rec = NCDataset(fname_cv_out; maskingvalue = NaN)
+n = 1
+figure();
+subplot(2,1,1); pcolormesh(ds[varname][:,:,3]')
+subplot(2,1,2); pcolormesh(ds_rec[varname * "_sample"][:,:,n,1]')

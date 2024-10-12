@@ -22,7 +22,8 @@ function DatasetLoader((lon,lat,time),(Δlon,Δlat,Δtime), data_cv, beta;
     T = length(beta)
 
     alpha,alpha_bar,sigma = noise_schedule(beta)
-    dd = DatasetLoader(data_cv,rng,T,train_mean,train_std,device,alpha_bar,auxdata_loader,training)
+    dd = DatasetLoader(data_cv,rng,T,train_mean,train_std,device,
+                       alpha_bar,auxdata_loader,training)
 
     return dd
 end
