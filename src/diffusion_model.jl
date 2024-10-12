@@ -630,8 +630,8 @@ end
 
 #naux_data(auxd::AuxData) = 2 + 2 + 2 * (auxd.ntime_win-1)
 #naux_data(auxd::AuxData) = 2 * (auxd.ntime_win-1)
-#naux_data(auxd::AuxData) = (auxd.ntime_win-1)
-naux_data(auxd::AuxData) = 2 + 2 + (auxd.ntime_win-1)
+naux_data(auxd::AuxData) = (auxd.ntime_win-1)
+#naux_data(auxd::AuxData) = 2 + 2 + (auxd.ntime_win-1)
 
 normalize(x,x_range) = (x .- x_range[1]) ./ (x_range[2] - x_range[1])
 
@@ -642,13 +642,13 @@ function load_aux_data!(auxd::AuxData,index,aux_data)
     for l = 1:length(index)
         i,j,n = from_lin_index(auxd.pi,l)
 
-        aux_data[:,:,1,l] .= normalize(auxd.lon[:,index[l]],auxd.lon_range)
-        aux_data[:,:,2,l] .= normalize(auxd.lat[:,index[l]],auxd.lat_range)'
-        aux_data[:,:,3,l] .= auxd.cos_time[l]
-        aux_data[:,:,4,l] .= auxd.sin_time[l]
-        baseindex = 5
+        # aux_data[:,:,1,l] .= normalize(auxd.lon[:,index[l]],auxd.lon_range)
+        # aux_data[:,:,2,l] .= normalize(auxd.lat[:,index[l]],auxd.lat_range)'
+        # aux_data[:,:,3,l] .= auxd.cos_time[l]
+        # aux_data[:,:,4,l] .= auxd.sin_time[l]
+        # baseindex = 5
 
-        #baseindex = 1
+        baseindex = 1
 
         for islice = ((1:ntime_win) .- (ntime_win+1)÷2)
             if islice == 0
