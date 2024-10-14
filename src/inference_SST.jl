@@ -1,7 +1,7 @@
 # import the modules
 
 using Pkg
-Pkg.activate("/home/abarth/.julia/dev/DINDiff")
+Pkg.activate(expanduser("~/.julia/dev/DINDiff"))
 
 import CUDA
 using JLD2
@@ -37,6 +37,8 @@ isvalid = nothing
 #timestamp = "2024-10-08T223706"
 #timestamp = "2024-10-08T212832"
 #timestamp = "2024-10-10T132004"
+
+timestamp = sort(readdir(expdir))[end]
 
 epoch = 100
 epoch = 140

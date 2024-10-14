@@ -2,7 +2,7 @@
 # all dependencies are assumed to be already installed
 
 using Pkg
-Pkg.activate("/home/abarth/.julia/dev/DINDiff")
+Pkg.activate(expanduser("~/.julia/dev/DINDiff"))
 import CUDA
 using JLD2
 using DataStructures
@@ -44,14 +44,14 @@ isvalid = nothing
 
 
 
-batch_size = 60
+batch_size = 64
 checkpoint_epoch = 20
 nb_epochs = 140
-nb_epochs =  20
-learning_rate = 0.00018967415117200598
+#nb_epochs =  20
+learning_rate = 0.001
 kernel_size = 3
 T = 600
-T = 50
+#T = 50
 activation = relu
 max_beta = 0.02031910864124268;
 channels = (16,32,64,128,256,256)
