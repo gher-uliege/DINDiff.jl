@@ -8,7 +8,14 @@ Alexander Barth, Julien Brajard, Aida Alvera-Azcárate, Bayoumy Mohamed, Charles
 Ensemble reconstruction of missing satellite data using a denoising diffusion model: application to chlorophyll a concentration in the Black Sea, 2024
 https://egusphere.copernicus.org/preprints/2024/egusphere-2024-1075/
 
-Submitted to Ocean Science
+Accepted in Ocean Science
+
+
+
+https://github.com/user-attachments/assets/2eb271a1-de9e-4e71-8bf6-82f9e565ba83
+
+
+
 
 ## Installation
 
