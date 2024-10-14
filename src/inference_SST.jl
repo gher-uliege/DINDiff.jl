@@ -40,6 +40,7 @@ isvalid = nothing
 
 epoch = 100
 epoch = 140
+epoch = 20
 
 # quick test
 #timestamp = "2024-10-02T174808"
@@ -215,11 +216,11 @@ close(dsout)
 
 
 
-
+using PyPlot
 varname = "sst"
 ds = NCDataset(fname_cv; maskingvalue = NaN)
 ds_rec = NCDataset(fname_cv_out; maskingvalue = NaN)
 n = 1
 figure();
-subplot(2,1,1); pcolormesh(ds[varname][:,:,3]')
-subplot(2,1,2); pcolormesh(ds_rec[varname * "_sample"][:,:,n,1]')
+subplot(2,1,1); pcolormesh(ds[varname][:,:,3]'); colorbar()
+subplot(2,1,2); pcolormesh(ds_rec[varname * "_sample"][:,:,n,1]'); colorbar()
