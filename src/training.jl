@@ -14,6 +14,7 @@ using Printf
 using Random
 using Statistics
 using Test
+using Glob
 using DINDiff: ncload, extend, train!, DatasetLoader,
     AuxData, naux_data, genmodel, skipnan, savemodel, noise_schedule
 
@@ -44,14 +45,15 @@ isvalid = nothing
 
 
 
-batch_size = 64
+batch_size = 60
 checkpoint_epoch = 20
 nb_epochs = 140
 #nb_epochs =  20
-learning_rate = 0.001
+#nb_epochs =  3
+nb_epochs = 160
+learning_rate = 0.00018967415117200598
 kernel_size = 3
-T = 600
-#T = 50
+T = 1000
 activation = relu
 max_beta = 0.02031910864124268;
 channels = (16,32,64,128,256,256)
@@ -82,6 +84,10 @@ resdir = joinpath(datadir,timestamp)
 
 train_input = ncload(fname,varname,datatrans; isvalid);
 train_input = extend(train_input);
+
+#@info "remove mean"
+#train_input_m = mapslices(s -> mean(skipnan(s)),train_input,dims=(1,2));
+#@. train_input = train_input - train_input_m
 
 @info "sample size $(size(train_input))"
 
@@ -129,10 +135,12 @@ beta = collect(LinRange(0, max_beta, T))
 mkpath(resdir)
 model_fname = joinpath(resdir,"model_diffusion.jld2")
 
-cp(@__FILE__,joinpath(resdir,basename(@__FILE__)))
+for fn in glob("*.jl",joinpath(dirname(@__FILE__),"..","examples"))
+    cp(fn,joinpath(resdir,basename(fn)))
+end
 
-for fn in ["diffusion_model.jl","inference.jl"]
-    cp(joinpath(dirname(@__FILE__),fn),joinpath(resdir,fn))
+for fn in glob("*.jl",dirname(@__FILE__))
+    cp(fn,joinpath(resdir,basename(fn)))
 end
 
 @info "generate model"

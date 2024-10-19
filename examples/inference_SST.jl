@@ -34,15 +34,18 @@ fname_orig = fname_train
 #expdir = dirname(fname_train)
 datatrans = identity
 isvalid = nothing
-#timestamp = "2024-10-08T223706"
-#timestamp = "2024-10-08T212832"
-#timestamp = "2024-10-10T132004"
-
+#timestamp = "2024-10-08T212832" # not bad, reconstructed parts somewhat colder
+#timestamp = "2024-10-08T223706" # better
+#timestamp = "2024-10-10T132004" # better, noisy where missing
+#timestamp = "2024-10-11T171931" # with aux
+#timestamp = "2024-10-15T125257" # must remove mean,noisy where missing,somewhat ok
 timestamp = sort(readdir(expdir))[end]
+#timestamp = "2024-10-10T132004"
 
 epoch = 100
 epoch = 140
-epoch = 20
+epoch = 160
+#epoch = 20
 
 # quick test
 #timestamp = "2024-10-02T174808"
@@ -104,7 +107,8 @@ end
 
 epoch_str = @sprintf("%05d",epoch)
 
-model_fname = joinpath(expdir,timestamp,"model-checkpoint-$epoch_str.jld2")
+#model_fname = joinpath(expdir,timestamp,"model-checkpoint-$epoch_str.jld2")
+model_fname = joinpath(expdir,timestamp,"model_diffusion.jld2")
 
 fname_cv_out = replace(model_fname,".jld2" => "") * "_" * replace(basename(fname_cv),".nc" => "_filled.nc")
 fname_cv_stat = replace(model_fname,".jld2" => "") * "_" * replace(basename(fname_cv),".nc" => "_filled-$varname.json")
@@ -163,11 +167,10 @@ for n = ntimes
     local xc
     local mx
     local stdx
-
+    local ds
     x0,x_mask,aux_data = device.(getobs_orig(dd,n))
-    x_diff = zeros(size(x0)[1:3]...,Nsample,length(beta));
+    #x_diff = zeros(size(x0)[1:3]...,Nsample,length(beta));
 
-    #x0 = cat(x0,aux_data,dims=3)
     #x0 .= x0 .- mean(filter(isfinite,x0))
 
     #x_diff = nothing
