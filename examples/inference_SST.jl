@@ -86,8 +86,8 @@ fname_cv = fname_train
 
 
 tindex = 3:3
-tindex = 8:16
-tindex = 3:3
+#tindex = 8:16
+#tindex = 3:3
 
 
 # ds_train = NCDataset(fname_train)
@@ -260,7 +260,9 @@ mask = dsm["mask"][:,:];
 
 
 function hm(x; kwargs...)
-    heatmap(plon,plat,x'; aspect_ratio = 1, clims = cl, kwargs...)
+    heatmap(plon,plat,x';
+            c=:viridis,
+            aspect_ratio = 1, colorbar=false, clims = cl, kwargs...)
 end
 
 for (n,n1) in enumerate(tindex)
@@ -285,15 +287,23 @@ for (n,n1) in enumerate(tindex)
     data[mask_cv .== 0] .= NaN
 
     cl = extrema(filter(isfinite,data_orig))
-
+    l = @layout [grid(2, 2) a{0.06w}]
     display(plot(
-        hm(data_orig, title = "original data"),
+        hm(data_orig, title = "original data",
+           xlabel="longitude",
+           ylabel="latitude",
+           ),
         hm(data, title = "with added clouds"),
-        hm(data_rec, title = "reconstructed data");
+        hm(data_rec, title = "reconstructed data"),
+        #        hm(data_rec, title = "reconstructed data"),
+        plot(legend=false,grid=false,foreground_color_subplot=:white),
+        scatter([0,0], [0,1], zcolor=[0,3], clims=cl,  c=:viridis,
+                xlims=(1,1.1), xshowaxis=false, yshowaxis=false, label="", colorbar_title="temperature", grid=false),
         plot_title = string("SST ",Dates.format(ptime,"yyyy-mm-dd")),
         framestyle = :box,
-        size = (600, 700),
-        colorbar_frame = :box
+        size = (750, 700),
+        colorbar_frame = :box,
+        layout=l,
     ))
 
     figname = joinpath(dirname(model_fname), string("sample_", n, "_" , k, ".png"))
