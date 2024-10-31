@@ -26,7 +26,9 @@ dataset = "test"
 
 
 # SST
-fname = expanduser("~/Data/Global/MODIS/patches_sst_0.25_dev.nc")
+datadir = expanduser("~/Data/Global/MODIS")
+fname = joinpath(datadir,"patches_sst_0.25_dev.nc")
+mask_fname = joinpath(datadir,"mask.nc")
 varname = "sst"
 expdir = expanduser("~/tmp/SST-diffusion-model")
 fname_train = fname
@@ -41,6 +43,13 @@ isvalid = nothing
 #timestamp = "2024-10-15T125257" # must remove mean,noisy where missing,somewhat ok
 timestamp = sort(readdir(expdir))[end]
 #timestamp = "2024-10-10T132004"
+
+
+max_missing_fraction = 0.25
+split_name = ["train","dev","test"]
+ii = 2
+patchfile_mask = joinpath(datadir,"patches_$(varname)_$(max_missing_fraction)_$(split_name[ii])_mask.nc")
+
 
 epoch = 100
 epoch = 140
@@ -76,6 +85,8 @@ fname_cv = fname_train
 # close(ds)
 
 
+tindex = 3:3
+tindex = 8:16
 tindex = 3:3
 
 
@@ -133,18 +144,23 @@ train_std = params.train_std
 
 
 
-ds_all = NCDataset(fname_cv,"r")
+ds_all = NCDataset(fname_cv,"r");
+ds_mask_all = NCDataset(patchfile_mask,"r");
+
 ds = view(ds_all,time = tindex)
+ds_mask = view(ds_mask_all,time = tindex)
+
 (dsout,ncdata,ncdatasample,ncdataerror) = DINDiff.ncoutput(
     (ds["lon"],ds["lat"],ds["time"]),fname_cv_out, varname; Nsample_keep)
 
 close(ds_all)
 
 device = gpu
-model = model |> device
+model = model |> device;
 
 training = false
 
+ncmask_cv = ds_mask["mask_cv"]
 dd = DatasetLoader(fname_cv, varname, beta;
                    tindex,
                    train_mean,
@@ -173,6 +189,8 @@ for n = ntimes
 
     #x0 .= x0 .- mean(filter(isfinite,x0))
 
+    mask_cv = Bool.(ncmask_cv[:,:,n]) |> gpu
+    x0[mask_cv .== 0] .= NaN
     #x_diff = nothing
 
     xc = generate_cond(
@@ -221,11 +239,63 @@ close(dsout)
 
 
 
-using PyPlot
+
+using Plots
+
+
 varname = "sst"
 ds = NCDataset(fname_cv; maskingvalue = NaN)
 ds_rec = NCDataset(fname_cv_out; maskingvalue = NaN)
 n = 1
-figure();
-subplot(2,1,1); pcolormesh(ds[varname][:,:,3]'); colorbar()
-subplot(2,1,2); pcolormesh(ds_rec[varname * "_sample"][:,:,n,1]'); colorbar()
+k = 1
+n1 = tindex[1]
+cl = (-1,1)
+plon = 0
+plat = 0
+
+dsm = NCDataset(mask_fname)
+lon = dsm["lon"][:];
+lat = dsm["lat"][:];
+mask = dsm["mask"][:,:];
+
+
+function hm(x; kwargs...)
+    heatmap(plon,plat,x'; aspect_ratio = 1, clims = cl, kwargs...)
+end
+
+for (n,n1) in enumerate(tindex)
+    global cl, lon, lat
+
+    data_orig = ds[varname][:,:,n1]
+    plon  = ds["lon"][:,n1]
+    plat  = ds["lat"][:,n1]
+    ptime  = ds["time"][n1]
+
+    i = findfirst(==(plon[1]),lon) .+ (0:(length(plon)-1))
+    j = findfirst(==(plat[1]),lat) .+ (0:(length(plat)-1))
+    @assert lon[i] == plon
+    @assert lat[j] == plat
+
+    data_rec = ds_rec[varname * "_sample"][:,:,n,k]
+    # mask land
+    data_rec[mask[i,j] .== 0] .= NaN
+
+    data = copy(data_orig)
+    mask_cv = Bool.(ncmask_cv[:,:,n])
+    data[mask_cv .== 0] .= NaN
+
+    cl = extrema(filter(isfinite,data_orig))
+
+    display(plot(
+        hm(data_orig, title = "original data"),
+        hm(data, title = "with added clouds"),
+        hm(data_rec, title = "reconstructed data");
+        plot_title = string("SST ",Dates.format(ptime,"yyyy-mm-dd")),
+        framestyle = :box,
+        size = (600, 700),
+        colorbar_frame = :box
+    ))
+
+    figname = joinpath(dirname(model_fname), string("sample_", n, "_" , k, ".png"))
+    savefig(figname)
+end
