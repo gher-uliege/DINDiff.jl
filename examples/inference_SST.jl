@@ -18,8 +18,10 @@ using Test
 using DINDiff
 using DINDiff: genmodel, generate_cond, getobs_orig, AuxData, loadmodel, noise_schedule, DatasetLoader
 
+include("diffusion_sst_common.jl")
+
 # name of the dataset (test or dev)
-dataset = "test"
+dataset = "dev"
 
 # timestamp of the used model and epoch
 #timestamp = "2023-12-06T152517"
@@ -67,6 +69,7 @@ Nsample = 64
 
 # number of ensemble members to keep
 Nsample_keep = 64
+Nsample_keep = 4
 
 
 
@@ -87,8 +90,10 @@ fname_cv = fname_train
 
 tindex = 3:3
 #tindex = 8:16
-#tindex = 3:3
+tindex = 1:20
+tindex = Colon()
 
+tindex = [400]
 
 # ds_train = NCDataset(fname_train)
 # lon_range = extrema(ds_train["lon"][:,:])
@@ -178,19 +183,21 @@ ntimes = 1:size(ncdata,3)
 x_diff = nothing
 
 # time loop
-for n = ntimes
+for (nglobal,n) = zip(tindex,ntimes)
     local x0
     local xc
     local mx
     local stdx
     local ds
+
     x0,x_mask,aux_data = device.(getobs_orig(dd,n))
-    #x_diff = zeros(size(x0)[1:3]...,Nsample,length(beta));
+    x_diff = zeros(size(x0)[1:3]...,Nsample,length(beta));
 
     #x0 .= x0 .- mean(filter(isfinite,x0))
 
     mask_cv = Bool.(ncmask_cv[:,:,n]) |> gpu
     x0[mask_cv .== 0] .= NaN
+
     #x_diff = nothing
 
     xc = generate_cond(
@@ -201,7 +208,7 @@ for n = ntimes
 
 
     if !isnothing(x_diff)
-        fname_out = joinpath(dirname(model_fname),"$(dataset)_diff_$(n).nc")
+        fname_out = joinpath(dirname(model_fname),"$(dataset)_diff_$(nglobal).nc")
         if isfile(fname_out)
             rm(fname_out)
         end
@@ -240,72 +247,3 @@ close(dsout)
 
 
 
-using Plots
-
-
-varname = "sst"
-ds = NCDataset(fname_cv; maskingvalue = NaN)
-ds_rec = NCDataset(fname_cv_out; maskingvalue = NaN)
-n = 1
-k = 1
-n1 = tindex[1]
-cl = (-1,1)
-plon = 0
-plat = 0
-
-dsm = NCDataset(mask_fname)
-lon = dsm["lon"][:];
-lat = dsm["lat"][:];
-mask = dsm["mask"][:,:];
-
-
-function hm(x; kwargs...)
-    heatmap(plon,plat,x';
-            c=:viridis,
-            aspect_ratio = 1, colorbar=false, clims = cl, kwargs...)
-end
-
-for (n,n1) in enumerate(tindex)
-    global cl, lon, lat
-
-    data_orig = ds[varname][:,:,n1]
-    plon  = ds["lon"][:,n1]
-    plat  = ds["lat"][:,n1]
-    ptime  = ds["time"][n1]
-
-    i = findfirst(==(plon[1]),lon) .+ (0:(length(plon)-1))
-    j = findfirst(==(plat[1]),lat) .+ (0:(length(plat)-1))
-    @assert lon[i] == plon
-    @assert lat[j] == plat
-
-    data_rec = ds_rec[varname * "_sample"][:,:,n,k]
-    # mask land
-    data_rec[mask[i,j] .== 0] .= NaN
-
-    data = copy(data_orig)
-    mask_cv = Bool.(ncmask_cv[:,:,n])
-    data[mask_cv .== 0] .= NaN
-
-    cl = extrema(filter(isfinite,data_orig))
-    l = @layout [grid(2, 2) a{0.06w}]
-    display(plot(
-        hm(data_orig, title = "original data",
-           xlabel="longitude",
-           ylabel="latitude",
-           ),
-        hm(data, title = "with added clouds"),
-        hm(data_rec, title = "reconstructed data"),
-        #        hm(data_rec, title = "reconstructed data"),
-        plot(legend=false,grid=false,foreground_color_subplot=:white),
-        scatter([0,0], [0,1], zcolor=[0,3], clims=cl,  c=:viridis,
-                xlims=(1,1.1), xshowaxis=false, yshowaxis=false, label="", colorbar_title="temperature", grid=false),
-        plot_title = string("SST ",Dates.format(ptime,"yyyy-mm-dd")),
-        framestyle = :box,
-        size = (750, 700),
-        colorbar_frame = :box,
-        layout=l,
-    ))
-
-    figname = joinpath(dirname(model_fname), string("sample_", n, "_" , k, ".png"))
-    savefig(figname)
-end
