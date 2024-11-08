@@ -16,7 +16,9 @@ using Statistics
 using Test
 using Glob
 using DINDiff: ncload, extend, train!, DatasetLoader,
-    AuxData, naux_data, genmodel, skipnan, savemodel, noise_schedule
+    AuxData, naux_data, skipnan, savemodel, noise_schedule
+
+include(expanduser("~/Julia/share/my_unet.jl"))
 
 CUDA.allowscalar(false)
 
@@ -152,11 +154,13 @@ if auxdata_loader !== nothing
 #    out_channels += naux_data(auxdata_loader)
 end
 
-model = genmodel(
-    kernel_size,activation;
-    in_channels = in_channels,
-    out_channels = out_channels,
-    channels = channels);
+model = genmodel(;
+                  kernel_size = kernel_size,
+                  activation = activation,
+                  in_channels = in_channels+1,
+                  out_channels = out_channels,
+                  channels = channels
+)
 
 model = model |> device;
 
