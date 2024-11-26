@@ -1,6 +1,6 @@
 [![DOI](https://zenodo.org/badge/832065698.svg)](https://zenodo.org/doi/10.5281/zenodo.13165362)
 
-# DINDiff
+# Data-interpolating denoising diffusion model (DINDiff)
 
 This is the source code for the manuscript:
 
@@ -9,8 +9,6 @@ Ensemble reconstruction of missing satellite data using a denoising diffusion mo
 https://egusphere.copernicus.org/preprints/2024/egusphere-2024-1075/
 
 Accepted in Ocean Science
-
-
 
 https://github.com/user-attachments/assets/2eb271a1-de9e-4e71-8bf6-82f9e565ba83
 
