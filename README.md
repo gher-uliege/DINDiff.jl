@@ -10,7 +10,13 @@ https://egusphere.copernicus.org/preprints/2024/egusphere-2024-1075/
 
 Accepted in Ocean Science
 
-https://github.com/user-attachments/assets/2eb271a1-de9e-4e71-8bf6-82f9e565ba83
+
+
+https://github.com/user-attachments/assets/7fe1d359-252d-4a93-b014-6f183f1ffa32
+
+* Satellite sea-surface temperature (MODIS: Moderate-resolution Imaging Spectroradiometer) at 4 km resolution 
+* Training on global dataset (2000-2018), with patches of the size 128x128 pixels during 160 epochs
+* 600 diffusion steps
 
 
 
