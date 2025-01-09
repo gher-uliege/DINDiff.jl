@@ -4,12 +4,7 @@
 
 This is the source code for the manuscript:
 
-Alexander Barth, Julien Brajard, Aida Alvera-Azcárate, Bayoumy Mohamed, Charles Troupin, and Jean-Marie Beckers,
-Ensemble reconstruction of missing satellite data using a denoising diffusion model: application to chlorophyll a concentration in the Black Sea, 2024
-https://egusphere.copernicus.org/preprints/2024/egusphere-2024-1075/
-
-Accepted in Ocean Science
-
+Barth, A., Brajard, J., Alvera-Azcárate, A., Mohamed, B., Troupin, C., and Beckers, J.-M.: Ensemble reconstruction of missing satellite data using a denoising diffusion model: application to chlorophyll a concentration in the Black Sea, Ocean Sci., 20, 1567–1584, [https://doi.org/10.5194/os-20-1567-2024](https://doi.org/10.5194/os-20-1567-2024), 2024.
 
 
 https://github.com/user-attachments/assets/7fe1d359-252d-4a93-b014-6f183f1ffa32
