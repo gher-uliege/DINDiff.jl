@@ -18,7 +18,7 @@ using Glob
 using DINDiff: ncload, extend, train!, DatasetLoader,
     AuxData, naux_data, skipnan, savemodel, noise_schedule
 
-include(expanduser("~/Julia/share/my_unet.jl"))
+include("my_unet.jl")
 
 CUDA.allowscalar(false)
 
