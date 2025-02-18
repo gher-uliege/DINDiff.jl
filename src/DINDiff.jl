@@ -1,6 +1,5 @@
 module DINDiff
 
-import CUDA
 using DataStructures
 using Dates
 using Flux
