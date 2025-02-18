@@ -390,11 +390,12 @@ function train!(model,dl;
 
     alpha,alpha_bar,sigma = device.(noise_schedule(beta))
 
-    params = Flux.params(model)
-    nb_parameters = sum(length.(params))
+    params = Flux.trainable(model)
+    nb_parameters = sum(length,params)
     println("nb_parameters ",nb_parameters)
 
-    optimizer = ADAM(learning_rate)
+    optimizer = Flux.Adam(learning_rate)
+    opt_state = Flux.setup(optimizer, model)
     losses = Float32[]
 
     @time for k = 1:nb_epochs
@@ -410,15 +411,13 @@ function train!(model,dl;
           (xt,tt,eps,mask) = first(dl)
         =#
         for (xt,tt,eps,mask) in dl
-            loss, back = Flux.pullback(params) do
-                ϵ = model((xt, tt))
+            loss, grads = Flux.withgradient(model) do m
+                ϵ = m((xt, tt))
                 difference = (eps - ϵ) .* mask
                 mean(difference.^2)
             end
 
-            grad = back(1f0)
-
-            Flux.update!(optimizer, params, grad)
+            Flux.update!(opt_state, model, grads[1])
 
             acc_loss += loss * size(xt)[end]
             acc_count += size(xt)[end]
