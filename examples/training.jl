@@ -141,11 +141,11 @@ beta = collect(LinRange(0, max_beta, T))
 mkpath(resdir)
 model_fname = joinpath(resdir,"model_diffusion.jld2")
 
-for fn in glob("*.jl",joinpath(dirname(@__FILE__),"..","examples"))
+for fn in glob("*.jl",dirname(@__FILE__))
     cp(fn,joinpath(resdir,basename(fn)))
 end
 
-for fn in glob("*.jl",dirname(@__FILE__))
+for fn in glob("*.jl",dirname(pathof(DINDiff)))
     cp(fn,joinpath(resdir,basename(fn)))
 end
 
