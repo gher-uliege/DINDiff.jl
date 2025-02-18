@@ -1,7 +1,7 @@
 # import the modules
 
 using Pkg
-Pkg.activate(expanduser("~/.julia/dev/DINDiff"))
+Pkg.activate(dirname(@__FILE__))
 
 using JLD2
 using DataStructures
