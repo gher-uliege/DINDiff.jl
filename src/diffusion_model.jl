@@ -87,7 +87,7 @@ function generate_cond(device, beta, model, train_mean, train_std, x0, Nsample; 
 
         @debug begin
         println("stat of x at step ", t,
-                " count NaN ",count(isnan.(x)),
+                " count NaN ",count(isnan,x),
                 " mean: ", mean(x),
                 " std: ", std(x),
                 " range: ", extrema(x))
