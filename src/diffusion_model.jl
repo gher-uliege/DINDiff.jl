@@ -383,9 +383,8 @@ function train!(model,dl;
 
     alpha,alpha_bar,sigma = device.(noise_schedule(beta))
 
-    params = Flux.trainable(model)
-    nb_parameters = sum(length,params)
-    println("nb_parameters ",nb_parameters)
+    nb_parameters = sum(length,Flux.trainables(model))
+    println("nb_parameters: ",nb_parameters)
 
     optimizer = Flux.Adam(learning_rate)
     opt_state = Flux.setup(optimizer, model)
