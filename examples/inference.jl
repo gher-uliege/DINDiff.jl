@@ -192,6 +192,7 @@ for (nglobal,n) = zip(tindex,ntimes)
     local mx
     local stdx
     local ds
+    local x_diff
 
     x0,x_mask,aux_data = device.(getobs_orig(dd,n))
     x_diff = zeros(size(x0)[1:3]...,Nsample,length(beta));
