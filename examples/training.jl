@@ -15,6 +15,7 @@ using Random
 using Statistics
 using Test
 using Glob
+using DINDiff
 using DINDiff: ncload, extend, train!, DatasetLoader,
     AuxData, naux_data, skipnan, savemodel, noise_schedule, genmodel
 
