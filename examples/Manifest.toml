@@ -2,13 +2,13 @@
 
 julia_version = "1.11.3"
 manifest_format = "2.0"
-project_hash = "40ddee7b19e19e5c7197d9c456e3c06ce6d48245"
+project_hash = "b413dabdb9bd291f49df2328110204c52ec572c5"
 
 [[deps.AMDGPU]]
 deps = ["AbstractFFTs", "AcceleratedKernels", "Adapt", "Atomix", "CEnum", "ExprTools", "GPUArrays", "GPUCompiler", "KernelAbstractions", "LLD_jll", "LLVM", "LLVM_jll", "Libdl", "LinearAlgebra", "Pkg", "Preferences", "PrettyTables", "Printf", "ROCmDeviceLibs_jll", "Random", "Random123", "RandomNumbers", "SparseArrays", "SpecialFunctions", "StaticArraysCore", "Statistics", "UnsafeAtomics"]
-git-tree-sha1 = "915c5604d60710fe0bc13f87fbf31e3827f016ea"
+git-tree-sha1 = "bd1b51c7bce469c42af0f2c2a19f6b7c1d7eec12"
 uuid = "21141c5a-9bdb-4563-92ae-f87d6854732e"
-version = "1.2.3"
+version = "1.2.2"
 weakdeps = ["ChainRulesCore", "EnzymeCore"]
 
     [deps.AMDGPU.extensions]
@@ -27,10 +27,10 @@ weakdeps = ["ChainRulesCore", "Test"]
     AbstractFFTsTestExt = "Test"
 
 [[deps.AcceleratedKernels]]
-deps = ["ArgCheck", "GPUArrays", "KernelAbstractions", "Markdown", "OhMyThreads", "Polyester", "Unrolled"]
-git-tree-sha1 = "c88185664ba253628d00f92b1b1b096759c1873e"
+deps = ["ArgCheck", "DocStringExtensions", "GPUArraysCore", "KernelAbstractions", "Markdown", "OhMyThreads", "Polyester", "Unrolled"]
+git-tree-sha1 = "e1c0f4c8ded2762a79fc73afdc9ba652978162d7"
 uuid = "6a4ca0a5-0e36-4168-a932-d9be78d558f1"
-version = "0.3.0"
+version = "0.2.2"
 
     [deps.AcceleratedKernels.extensions]
     AcceleratedKernelsMetalExt = "Metal"
