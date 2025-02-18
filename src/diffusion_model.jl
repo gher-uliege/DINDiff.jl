@@ -199,11 +199,18 @@ function loadmodel(model_fname)
     channels = Tuple(params.channels)
     ntime_win = get(params,:ntime_win,1)
 
-    model = genmodel(
-        kernel_size,activation;
-        in_channels = in_channels,
-        out_channels = out_channels,
-        channels = channels);
+    #=
+    model = genmodel_old(
+    kernel_size,activation;
+    in_channels = in_channels,
+    out_channels = out_channels,
+    channels = channels);
+    =#
+    model = genmodel(;
+                     kernel_size,activation,
+                     in_channels = in_channels+1,
+                     out_channels,
+                     channels);
 
     beta = JLD2.load(model_fname, "beta");
     train_mean = JLD2.load(model_fname, "train_mean");
