@@ -144,7 +144,7 @@ end
 
 Returns the UNet
 """
-function genmodel(kernel_size,activation;
+function genmodel_old(kernel_size,activation;
                   channels = (16,32,64,128),
                   in_channels = 1,
                   out_channels = 1,

@@ -16,7 +16,7 @@ using Statistics
 using Test
 using Glob
 using DINDiff: ncload, extend, train!, DatasetLoader,
-    AuxData, naux_data, skipnan, savemodel, noise_schedule
+    AuxData, naux_data, skipnan, savemodel, noise_schedule, genmodel
 
 if !isnothing(Sys.which("nvidia-smi"))
     import CUDA, cuDNN
@@ -25,9 +25,6 @@ else
     import AMDGPU
     AMDGPU.allowscalar(false)
 end
-
-include("my_unet.jl")
-
 
 timestamp = Dates.format(Dates.now(),"yyyy-mm-ddTHHMMSS")
 

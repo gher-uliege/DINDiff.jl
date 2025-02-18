@@ -13,5 +13,6 @@ using JLD2
 
 include("diffusion_model.jl")
 include("data.jl")
+include("my_unet.jl")
 
 end
