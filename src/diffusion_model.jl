@@ -110,13 +110,6 @@ function generate_cond(device, beta, model, train_mean, train_std, x0, Nsample; 
 end
 
 
-function showsize(m)
-    return x -> begin
-        @show m,size(x)
-        return x
-    end
-end
-
 function block(ks,activation,channels,level)
     if level == length(channels)
         return identity
