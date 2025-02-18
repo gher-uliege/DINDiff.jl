@@ -3,7 +3,7 @@
 
 using Pkg
 Pkg.activate(expanduser("~/.julia/dev/DINDiff"))
-import CUDA
+
 using JLD2
 using DataStructures
 using Dates
@@ -18,9 +18,16 @@ using Glob
 using DINDiff: ncload, extend, train!, DatasetLoader,
     AuxData, naux_data, skipnan, savemodel, noise_schedule
 
+if !isnothing(Sys.which("nvidia-smi"))
+    import CUDA, cuDNN
+    CUDA.allowscalar(false)
+else
+    import AMDGPU
+    AMDGPU.allowscalar(false)
+end
+
 include("my_unet.jl")
 
-CUDA.allowscalar(false)
 
 timestamp = Dates.format(Dates.now(),"yyyy-mm-ddTHHMMSS")
 

@@ -436,7 +436,7 @@ function train!(model,dl;
         end
 
         GC.gc()
-        CUDA.reclaim()
+        #CUDA.reclaim()
     end
 
     return alpha, alpha_bar, sigma, losses

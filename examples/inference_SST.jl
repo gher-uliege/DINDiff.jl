@@ -3,7 +3,6 @@
 using Pkg
 Pkg.activate(expanduser("~/.julia/dev/DINDiff"))
 
-import CUDA
 using JLD2
 using DataStructures
 using Dates
@@ -17,6 +16,14 @@ using Statistics
 using Test
 using DINDiff
 using DINDiff: genmodel, generate_cond, getobs_orig, AuxData, loadmodel, noise_schedule, DatasetLoader
+
+if !isnothing(Sys.which("nvidia-smi"))
+    import CUDA, cuDNN
+    CUDA.allowscalar(false)
+else
+    import AMDGPU
+    AMDGPU.allowscalar(false)
+end
 
 include("diffusion_sst_common.jl")
 
@@ -46,12 +53,10 @@ isvalid = nothing
 timestamp = sort(readdir(expdir))[end]
 #timestamp = "2024-10-10T132004"
 
-
 max_missing_fraction = 0.25
 split_name = ["train","dev","test"]
 ii = 2
 patchfile_mask = joinpath(datadir,"patches_$(varname)_$(max_missing_fraction)_$(split_name[ii])_mask.nc")
-
 
 epoch = 100
 epoch = 140
@@ -74,8 +79,6 @@ Nsample_keep = 4
 
 
 #---
-
-CUDA.allowscalar(false)
 
 fname_cv = replace(fname_orig,".nc" => "_add_clouds.nc")
 fname_cv = fname_train
