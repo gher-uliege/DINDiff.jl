@@ -15,3 +15,8 @@ using Test
 
     # Write your tests here.
 end
+
+
+m = DINDiff.genmodel()
+@test sum(length,Flux.trainable(m)) == 31036481
+@test size(m((zeros(Float32,64,64,1,1),))) == (64,64,1,1)

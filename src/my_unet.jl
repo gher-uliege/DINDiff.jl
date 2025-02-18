@@ -77,10 +77,3 @@ function genmodel(;in_channels = 1,
 end
 
 
-@debug begin
-
-using Test
-m = genmodel()
-@test sum(length.(Flux.params(m))) == 31036481
-@test size(m((zeros(Float32,64,64,1,1),))) == (64,64,1,1)
-end
