@@ -399,8 +399,9 @@ function train!(model,dl;
 
     @time for k = 1:nb_epochs
         if k % learning_rate_drop_epoch == 0
-            optimizer.eta *= learning_rate_factor
-            @info "optimizer.eta " optimizer.eta
+            learning_rate *= learning_rate_factor
+            Optimisers.adjust!(opt_state, learning_rate)
+            @info "learning rate " learning_rate
         end
 
         acc_loss = 0
