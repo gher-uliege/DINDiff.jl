@@ -54,7 +54,7 @@ function generate_cond(device, beta, model, train_mean, train_std, x0, Nsample; 
     end
 
     for t in T:-1:1
-        tt_index = fill(t,sz);
+        tt_index = fill(t,sz) |> device;
         tt_index[.!mask] .= 1;
         #@show size(x),size(tt)
         tt = Float32.((tt_index .- 1) ./ (T .- 1) .- 0.5) |> device;
@@ -76,9 +76,10 @@ function generate_cond(device, beta, model, train_mean, train_std, x0, Nsample; 
             else
                 reshape(noise[:,:,:,:,T-t+2],sz)
             end
+        zt = zt |> device
 
-        z = islast .* zeros(Float32,size(x)) + (1 .- islast) .* zt;
-        z = z |> device;
+        z = islast .* device(zeros(Float32,size(x))) + (1 .- islast) .* zt;
+
         ratio = (1 .- α[tt_index]) ./ sqrt.(1 .- ᾱ[tt_index])
         ratio[isnan.(ratio)] .= 0
         μ = 1 ./ sqrt.(α[tt_index]) .* (x - ratio .* ϵ);
@@ -326,6 +327,7 @@ function getobs(d::DatasetLoader,index::Union{AbstractVector,Integer})
     rng = d.rng
     sz = size(d.train_input)[1:2]
 
+
     x0_cpu,x_mask_cpu,aux_data_cpu = getobs_orig(d,index)
 
     x0 = x0_cpu |> device
@@ -347,7 +349,9 @@ function getobs(d::DatasetLoader,index::Union{AbstractVector,Integer})
     #@show cpu(t)[1],T
     t[.!has_no_data] .= 1 # at uncorrupted stage
     t[has_no_data_orig] .= T # at fully corrupted stage
-    eps = randn(rng,size(x0)) |> device
+    #eps = randn(rng,size(x0)) |> device
+    eps = similar(d.alpha_bar,size(x0)...)
+    randn!(eps)
 
     xt = sqrt.(alpha_bar[t]) .* x0 + sqrt.(1 .- alpha_bar[t]) .* eps
 
