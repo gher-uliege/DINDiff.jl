@@ -284,7 +284,7 @@ numobs(d::DatasetLoader) = size(d.train_input)[end]
 function rand_range!(a::AbstractArray{T},r::UnitRange) where T
     x = similar(a,Float32)
     rand!(x)
-    a .= floor.(T,x .* (last(r) - first(r) + 1) .+ first(r))
+    a .= unsafe_trunc.(T,x .* (last(r) - first(r) + 1) .+ first(r))
 end
 
 function getobs_orig(d::DatasetLoader,index::Union{AbstractVector,Integer})
