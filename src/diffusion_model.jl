@@ -281,6 +281,12 @@ end
 import MLUtils: numobs, getobs, getobs!
 numobs(d::DatasetLoader) = size(d.train_input)[end]
 
+function rand_range!(a::AbstractArray{T},r::UnitRange) where T
+    x = similar(a,Float32)
+    rand!(x)
+    a .= floor.(T,x .* (last(r) - first(r) + 1) .+ first(r))
+end
+
 function getobs_orig(d::DatasetLoader,index::Union{AbstractVector,Integer})
     rng = d.rng
     auxdata_loader = d.auxdata_loader
@@ -320,19 +326,22 @@ function getobs_orig(d::DatasetLoader,index::Union{AbstractVector,Integer})
     return (x0_cpu,x_mask_cpu,aux_data)
 end
 
-function getobs(d::DatasetLoader,index::Union{AbstractVector,Integer})
+function getobs(d::DatasetLoader{T},index::Union{AbstractVector,Integer}) where T
     device = d.device
     alpha_bar = d.alpha_bar
-    T = d.steps
+    steps = d.steps
     rng = d.rng
     sz = size(d.train_input)[1:2]
 
-
     x0_cpu,x_mask_cpu,aux_data_cpu = getobs_orig(d,index)
 
-    x0 = x0_cpu |> device
-    x_mask = x_mask_cpu |> device
-    aux_data = aux_data_cpu |> device
+    x0 = similar(d.alpha_bar,eltype(x0_cpu),size(x0_cpu))
+    x_mask = similar(d.alpha_bar,eltype(x_mask_cpu),size(x_mask_cpu))
+    aux_data = similar(d.alpha_bar,eltype(aux_data_cpu),size(aux_data_cpu))
+
+    copyto!(x0,x0_cpu)
+    copyto!(x_mask,x_mask_cpu)
+    copyto!(aux_data,aux_data_cpu)
 
     has_no_data_orig = isnan.(x0)
     # where we pretend there is no data
@@ -343,19 +352,22 @@ function getobs(d::DatasetLoader,index::Union{AbstractVector,Integer})
     # necessary because 0 * NaN is NaN
     x0[isnan.(x0)] .= 0;
 
-    t = zeros(Int16,size(x0)) |> device
-    t .= device(rand(rng,1:T,1,1,1,length(index)));
-    #t .= device(rand(rng,200:200,1,1,1,length(index)));
-    #@show cpu(t)[1],T
+    # t diffusion "time step"
+    ts = similar(x0,Int16,1,1,1,length(index))
+    rand_range!(ts,1:steps)
+    t = similar(x0,Int16,size(x0)...);
+    t .= ts
     t[.!has_no_data] .= 1 # at uncorrupted stage
-    t[has_no_data_orig] .= T # at fully corrupted stage
-    #eps = randn(rng,size(x0)) |> device
-    eps = similar(d.alpha_bar,size(x0)...)
+    t[has_no_data_orig] .= steps # at fully corrupted stage
+
+    # eps noise
+    eps = similar(x0,size(x0)...)
     randn!(eps)
 
     xt = sqrt.(alpha_bar[t]) .* x0 + sqrt.(1 .- alpha_bar[t]) .* eps
 
-    tt = Float32.((t .- 1) ./ (T .- 1) .- 0.5f0) |> device
+    # scale from -1/2 to 1/2
+    tt = (t .- 1) ./ (steps .- 1) .- T(1/2)
 
     xt = cat(xt,aux_data,dims=3)
     return (xt,tt,eps,mask)
