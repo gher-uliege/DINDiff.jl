@@ -327,7 +327,6 @@ function getobs_orig(d::DatasetLoader,index::Union{AbstractVector,Integer})
 end
 
 function getobs(d::DatasetLoader{T},index::Union{AbstractVector,Integer}) where T
-    device = d.device
     alpha_bar = d.alpha_bar
     steps = d.steps
     rng = d.rng
