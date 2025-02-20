@@ -45,6 +45,7 @@ datadir = dirname(fname)
 
 
 fname = expanduser("~/Data/Global/MODIS/patches_sst_0.25_train.nc")
+fname = expanduser("~/Data/Global/MODIS/patches_sst_0.25_train_512.nc")
 varname = "sst"
 datadir = expanduser("~/tmp/SST-diffusion-model")
 datatrans = identity
@@ -52,11 +53,11 @@ isvalid = nothing
 
 
 
-batch_size = 60
+batch_size = 64
 checkpoint_epoch = 20
 nb_epochs = 140
-#nb_epochs =  20
-nb_epochs =  3
+nb_epochs =  20
+#nb_epochs =  100
 #nb_epochs = 160
 learning_rate = 0.00018967415117200598
 kernel_size = 3
@@ -69,6 +70,7 @@ learning_rate_drop_epoch = 70
 learning_rate_factor = 0.8369710273382387
 ntime_win = 1
 
+@show batch_size
 # quick test
 #checkpoint_epoch = 1
 #nb_epochs =  2
