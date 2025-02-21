@@ -287,6 +287,64 @@ function rand_range!(a::AbstractArray{T},r::UnitRange) where T
     a .= unsafe_trunc.(T,x .* (last(r) - first(r) + 1) .+ first(r))
 end
 
+#=
+using BenchmarkTools
+(x0_cpu,x_mask_cpu,aux_data) = DINDiff.getobs_orig(dd,[1,2,3])
+buffer0 = zeros(Float32,128,128,1,1)
+
+(x0_d,x_mask_d,aux_data_d) = device.((x0_cpu,x_mask_cpu,aux_data))
+@btime DINDiff.getobs_orig!((x0_d,x_mask_d,aux_data_d,buffer0),dd,[1,2,3])
+=#
+
+function getobs_orig!((x0_cpu,x_mask_cpu,aux_data,buffer),d::DatasetLoader,index::Union{AbstractVector,Integer})
+    rng = d.rng
+    auxdata_loader = d.auxdata_loader
+    sz = size(d.train_input)[1:2]
+#    @show "ll3"
+    @inbounds for (i,j) in enumerate(index)
+        buffer .= @view d.train_input[:,:,:,j]
+        #@. buffer = (buffer .- d.train_mean) ./ d.train_std
+
+        copyto!((@view x0_cpu[:,:,:,i]),buffer)
+
+        # fast
+        #x0_cpu[:,:,:,i] .= ((@view d.train_input[:,:,:,j]) .- d.train_mean) ./ d.train_std
+
+        #copyto!((@view x0_cpu[:,:,:,i]), ((@view d.train_input[:,:,:,j]) .- d.train_mean) ./ d.train_std)
+
+        if d.training
+            index_mask = rand(rng,1:size(d.train_input,4))
+            buffer .= @view d.train_input[:,:,:,index_mask]
+            copyto!((@view x_mask_cpu[:,:,:,i]),buffer)
+        end
+    end
+
+    @. x0_cpu = (x0_cpu .- d.train_mean) ./ d.train_std
+
+#    if auxdata_loader !== nothing
+        # aux_data .= 0
+
+        #aux_data = zeros(Float32,sz...,naux_data(auxdata_loader),length(index));
+        #load_aux_data!(auxdata_loader,index,aux_data)
+
+        # # do not mask additional data for other time instances
+        # aux_data_mask_cpu = zeros(Float32,size(aux_data))
+
+        # # try
+        # for k = 1:size(aux_data,3)
+        #     index_mask = rand(rng,1:size(d.train_input,4),length(index))
+        #     aux_data_mask_cpu[:,:,k,:] = d.train_input[:,:,1,index_mask]
+        # end
+
+        #x_mask_cpu = cat(x_mask_cpu,aux_data_mask_cpu,dims=3)
+ #   end
+
+
+#    return (x0_cpu,x_mask_cpu,aux_data)
+
+
+end
+
 function getobs_orig(d::DatasetLoader,index::Union{AbstractVector,Integer})
     rng = d.rng
     auxdata_loader = d.auxdata_loader
@@ -366,7 +424,7 @@ function getobs(d::DatasetLoader{T},index::Union{AbstractVector,Integer}) where 
     xt = sqrt.(alpha_bar[t]) .* x0 + sqrt.(1 .- alpha_bar[t]) .* eps
 
     # scale from -1/2 to 1/2
-    tt = (t .- 1) ./ (steps .- 1) .- T(1/2)
+    tt = (T.(t) .- 1) ./ (steps .- 1) .- T(1/2)
 
     xt = cat(xt,aux_data,dims=3)
     return (xt,tt,eps,mask)
