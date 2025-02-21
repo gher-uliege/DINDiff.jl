@@ -459,6 +459,8 @@ function train!(model,dl;
                 rng = Random.GLOBAL_RNG,
                 train_mean = 0,
                 train_std = 1,
+                ddp = false,
+                backend = nothing,
               )
 
     alpha,alpha_bar,sigma = device.(noise_schedule(beta))
@@ -467,7 +469,21 @@ function train!(model,dl;
     println("nb_parameters: ",nb_parameters)
 
     optimizer = Flux.Adam(learning_rate)
+
+    if ddp
+        #data = DistributedUtils.DistributedDataContainer(backend, x)
+        model = DistributedUtils.synchronize!!(backend, DistributedUtils.FluxDistributedModel(model); root=0)
+        optimizer = DistributedUtils.DistributedOptimizer(backend, optimizer)
+    end
+
     opt_state = Flux.setup(optimizer, model)
+
+    if ddp
+        opt_state = DistributedUtils.synchronize!!(backend, opt_state; root=0)
+    end
+
+    #AMDGPU.synchronize()
+
     losses = Float32[]
 
     @time for k = 1:nb_epochs
@@ -490,7 +506,10 @@ function train!(model,dl;
                 mean(difference.^2)
             end
 
-            Flux.update!(opt_state, model, grads[1])
+            #AMDGPU.synchronize()
+
+            #Flux.update!(opt_state, model, grads[1])
+            opt_state, model = Optimisers.update(opt_state, model, grads[1])
 
             acc_loss += loss * size(xt)[end]
             acc_count += size(xt)[end]

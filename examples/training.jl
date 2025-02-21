@@ -1,3 +1,5 @@
+parallel = get(ENV,"PARALLEL","false") == "true"
+
 # load all modules
 # all dependencies are assumed to be already installed
 
@@ -18,6 +20,9 @@ using Glob
 using DINDiff
 using DINDiff: ncload, extend, train!, DatasetLoader,
     AuxData, naux_data, skipnan, savemodel, noise_schedule, genmodel
+if parallel
+    import MPI
+end
 
 if !isnothing(Sys.which("nvidia-smi"))
     import CUDA, cuDNN
@@ -25,6 +30,24 @@ if !isnothing(Sys.which("nvidia-smi"))
 else
     import AMDGPU
     AMDGPU.allowscalar(false)
+end
+
+function pprintln(backend,args...)
+    MPI.Barrier(backend.comm)
+    print("rank ",DistributedUtils.local_rank(backend),": ")
+    println(args...)
+end
+pprintln(::Nothing,args...) = println(args...)
+
+
+local_rank = 0
+if parallel
+    const backend_type = MPIBackend
+    DistributedUtils.initialize(backend_type)
+    backend = DistributedUtils.get_distributed_backend(backend_type)
+    local_rank = DistributedUtils.local_rank(backend)
+else
+    backend = nothing
 end
 
 timestamp = Dates.format(Dates.now(),"yyyy-mm-ddTHHMMSS")
@@ -135,21 +158,23 @@ sz = size(train_input)[1:2]
 Δtime = Day(1)
 
 auxdata_loader = AuxData(
-     (lon,lat,time),(Δlon,Δlat,Δtime),train_input,
-     ntime_win;
-     cycle = 365.25)
+    (lon,lat,time),(Δlon,Δlat,Δtime),train_input,
+    ntime_win;
+    cycle = 365.25)
 
 beta = collect(LinRange(0, max_beta, T))
 
 mkpath(resdir)
 model_fname = joinpath(resdir,"model_diffusion.jld2")
 
-for fn in glob("*.jl",dirname(@__FILE__))
-    cp(fn,joinpath(resdir,basename(fn)))
-end
+if local_rank == 0
+    for fn in glob("*.jl",dirname(@__FILE__))
+        cp(fn,joinpath(resdir,basename(fn)))
+    end
 
-for fn in glob("*.jl",dirname(pathof(DINDiff)))
-    cp(fn,joinpath(resdir,basename(fn)))
+    for fn in glob("*.jl",dirname(pathof(DINDiff)))
+        cp(fn,joinpath(resdir,basename(fn)))
+    end
 end
 
 @info "generate model"
@@ -158,16 +183,16 @@ in_channels = 1
 out_channels = 1
 if auxdata_loader !== nothing
     in_channels += naux_data(auxdata_loader)
-#    out_channels += naux_data(auxdata_loader)
+    #    out_channels += naux_data(auxdata_loader)
 end
 
 model = genmodel(;
-                  kernel_size = kernel_size,
-                  activation = activation,
-                  in_channels = in_channels+1,
-                  out_channels = out_channels,
-                  channels = channels
-)
+                 kernel_size = kernel_size,
+                 activation = activation,
+                 in_channels = in_channels+1,
+                 out_channels = out_channels,
+                 channels = channels
+                 )
 
 model = model |> device;
 
@@ -179,27 +204,31 @@ train_std = Float32(std(skipnan(Float64,train_input)))
 
 @info "save hyperparameters"
 
-paramsname = joinpath(resdir,"params.json")
+if local_rank == 0
 
-open(paramsname,"w") do f
-    JSON3.pretty(f,OrderedDict(
-        "beta" => beta,
-        "nb_epoch" => nb_epochs,
-        "activation" => "$activation",
-        "batch_size" => batch_size,
-        "kernel_size" => kernel_size,
-        "learning_rate" => learning_rate,
-        "learning_rate_drop_epoch" => learning_rate_drop_epoch,
-        "learning_rate_factor" => learning_rate_factor,
-        "T" => T,
-        "channels" => channels,
-        "fname" => fname,
-        "ntime_win" => ntime_win,
-        "train_mean" => train_mean,
-        "train_std" => train_std,
-        "in_channels" => in_channels,
-        "out_channels" => out_channels,
-    ))
+    paramsname = joinpath(resdir,"params.json")
+
+    open(paramsname,"w") do f
+        JSON3.pretty(f,OrderedDict(
+            "beta" => beta,
+            "nb_epoch" => nb_epochs,
+            "activation" => "$activation",
+            "batch_size" => batch_size,
+            "kernel_size" => kernel_size,
+            "learning_rate" => learning_rate,
+            "learning_rate_drop_epoch" => learning_rate_drop_epoch,
+            "learning_rate_factor" => learning_rate_factor,
+            "T" => T,
+            "channels" => channels,
+            "fname" => fname,
+            "ntime_win" => ntime_win,
+            "train_mean" => train_mean,
+            "train_std" => train_std,
+            "in_channels" => in_channels,
+            "out_channels" => out_channels,
+        ))
+    end
+
 end
 
 @info "start training"
@@ -234,6 +263,8 @@ alpha, alpha_bar, sigma, losses = @time train!(
     auxdata_loader = auxdata_loader,
     train_mean = train_mean,
     train_std = train_std,
+    ddp = true,
+    backend,
 )
 
 
