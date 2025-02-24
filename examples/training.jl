@@ -9,7 +9,7 @@ Pkg.activate(dirname(@__FILE__))
 using JLD2
 using DataStructures
 using Dates
-using Flux
+using Lux
 using JSON3
 using NCDatasets
 using Printf
@@ -17,6 +17,7 @@ using Random
 using Statistics
 using Test
 using Glob
+using MLUtils: DataLoader
 using DINDiff
 using DINDiff: ncload, extend, train!, DatasetLoader,
     AuxData, naux_data, skipnan, savemodel, noise_schedule, genmodel
@@ -53,8 +54,8 @@ end
 timestamp = Dates.format(Dates.now(),"yyyy-mm-ddTHHMMSS")
 
 # training on CPU or GPU
-#device = cpu
-device = gpu
+#device = cpu_device()
+device = gpu_device()
 
 # NetCDF file with the training data
 fname = expanduser("~/Data/NECCTON_Black_Sea/CHL2/cmems_obs-oc_blk_bgc-plankton_my_l3-olci-300m_P1D/patches_64_64_0.8.nc")
@@ -194,8 +195,6 @@ model = genmodel(;
                  channels = channels
                  )
 
-model = model |> device;
-
 checkpoint_dirname = resdir
 
 
@@ -241,15 +240,15 @@ rng = Random.GLOBAL_RNG
 dd = DatasetLoader(train_input,rng,T,train_mean,train_std,device,alpha_bar,auxdata_loader,training)
 
 @info "Data loader uses $(Threads.nthreads()) thread(s)"
-dl = Flux.DataLoader(dd; batchsize = batch_size, shuffle=true,
+dl = DataLoader(dd; batchsize = batch_size, shuffle=true,
                      parallel = Threads.nthreads() > 1,
                      partial = false);
 
 # test run
 (xt,tt,eps,mask) = first(dl);
-ϵ = model((xt, tt));
+#ϵ = model((xt, tt));
 
-alpha, alpha_bar, sigma, losses = @time train!(
+alpha, alpha_bar, sigma, losses, ps, st = @time train!(
     model,dl;
     device = device,
     nb_epochs = nb_epochs,
@@ -263,10 +262,10 @@ alpha, alpha_bar, sigma, losses = @time train!(
     auxdata_loader = auxdata_loader,
     train_mean = train_mean,
     train_std = train_std,
-    ddp = true,
+    ddp = !isnothing(backend),
     backend,
-)
+);
 
-
-savemodel(model,model_fname,train_mean,train_std,beta,losses)
+# mirlo : 20 epoch 30sec lux.
+savemodel((ps,st),model_fname,train_mean,train_std,beta,losses)
 

@@ -169,28 +169,28 @@ skipnan(x) = Iterators.filter(!isnan, x)
 skipnan(T,x) = Iterators.map(T,Iterators.filter(!isnan, x))
 
 """
-    savemodel(model,dirn,epoch::Integer,train_mean,train_std,beta,losses=[])
+    savemodel((ps,st),dirn,epoch::Integer,train_mean,train_std,beta,losses=[])
 
 Save the trained `model` in `dirn`
 """
-function savemodel(model,dirn,epoch::Integer,train_mean,train_std,beta,losses=[])
+function savemodel((ps,st),dirn,epoch::Integer,train_mean,train_std,beta,losses=[])
     model_fname = joinpath(dirn,"model-checkpoint-" * @sprintf("%05d",epoch) * ".jld2")
-    savemodel(model,model_fname,train_mean,train_std,beta,losses)
+    savemodel((ps,st),model_fname,train_mean,train_std,beta,losses)
 end
 
-function savemodel(model,model_fname,train_mean,train_std,beta,losses=[])
+function savemodel((ps,st),model_fname,train_mean,train_std,beta,losses=[])
     @info "save model $(model_fname)"
-    _savemodel(cpu(model),model_fname,cpu(train_mean),cpu(train_std),cpu(beta),losses)
+    cpu = Lux.cpu_device()
+    _savemodel(cpu.((ps,st)),model_fname,cpu(train_mean),cpu(train_std),cpu(beta),losses)
 end
 
-function _savemodel(m,model_fname,train_mean,train_std,beta,losses=[])
-    model_state = Flux.state(m);
-    jldsave(model_fname; model_state, train_mean, train_std, beta, losses)
+function _savemodel((ps,st),model_fname,train_mean,train_std,beta,losses=[])
+    jldsave(model_fname; ps, st, train_mean, train_std, beta, losses)
     #BSON.@save model_fname m train_mean train_std beta losses
 end
 
 function loadmodel(model_fname)
-    activation_functions = Dict((a => getfield(Flux,a)) for a in (:relu,:selu,:gelu))
+    activation_functions = Dict((a => getfield(Lux,a)) for a in (:relu,:selu,:gelu))
 
     params = JSON3.read(joinpath(dirname(model_fname),"params.json"))
     kernel_size = params.kernel_size
@@ -218,11 +218,12 @@ function loadmodel(model_fname)
     train_std = JLD2.load(model_fname, "train_std");
     losses = JLD2.load(model_fname, "losses");
 
-    model_state = JLD2.load(model_fname, "model_state");
-    Flux.loadmodel!(model, model_state);
+    model_parameters = JLD2.load(model_fname, "ps");
+    model_state = JLD2.load(model_fname, "st");
 
-    return (model,(; beta, train_mean, train_std, losses, ntime_win,
-                   in_channels, out_channels, channels))
+    return (model,(model_parameters,model_state),
+            (; beta, train_mean, train_std, losses, ntime_win,
+             in_channels, out_channels, channels))
 end
 
 function snapgrid(lon,Δlon)
@@ -437,6 +438,15 @@ function noise_schedule(beta)
     return alpha,alpha_bar,sigma
 end
 
+
+function maskedMSELoss(model, ps, st, (xt,tt,eps,mask))
+    ϵ,st = model((xt, tt),ps, st)
+    difference = (eps - ϵ) .* mask
+
+    stat = NamedTuple()
+    return (mean(difference.^2),st,stat)
+end
+
 """
     alpha, alpha_bar, sigma, losses = train(model, dl; ...)
 
@@ -465,21 +475,29 @@ function train!(model,dl;
 
     alpha,alpha_bar,sigma = device.(noise_schedule(beta))
 
-    nb_parameters = sum(length,Flux.trainables(model))
-    println("nb_parameters: ",nb_parameters)
 
-    optimizer = Flux.Adam(learning_rate)
+    opt = Optimisers.Adam(learning_rate)
+    rng = Random.default_rng()
+    ps, st = Lux.setup(rng, model)
+
+    nb_parameters = sum(length,st)
+    println("nb_parameters: ",nb_parameters)
 
     if ddp
         #data = DistributedUtils.DistributedDataContainer(backend, x)
-        model = DistributedUtils.synchronize!!(backend, DistributedUtils.FluxDistributedModel(model); root=0)
-        optimizer = DistributedUtils.DistributedOptimizer(backend, optimizer)
+        ps = DistributedUtils.synchronize!!(backend, ps)
+        st = DistributedUtils.synchronize!!(backend, st)
+        opt = DistributedUtils.DistributedOptimizer(backend, opt)
     end
 
-    opt_state = Flux.setup(optimizer, model)
+    ps = ps |> device
+    st = st |> device
+
+    opt_state = Optimisers.setup(opt, ps)
+    train_state = Training.TrainState(model, ps, st, opt)
 
     if ddp
-        opt_state = DistributedUtils.synchronize!!(backend, opt_state; root=0)
+        opt_state = DistributedUtils.synchronize!!(backend, opt_state)
     end
 
     #AMDGPU.synchronize()
@@ -500,16 +518,13 @@ function train!(model,dl;
           (xt,tt,eps,mask) = first(dl)
         =#
         for (xt,tt,eps,mask) in dl
-            loss, grads = Flux.withgradient(model) do m
-                ϵ = m((xt, tt))
-                difference = (eps - ϵ) .* mask
-                mean(difference.^2)
-            end
+            _, loss, _, train_state = Training.single_train_step!(
+                AutoZygote(), maskedMSELoss, (xt,tt,eps,mask), train_state);
 
             #AMDGPU.synchronize()
 
             #Flux.update!(opt_state, model, grads[1])
-            opt_state, model = Optimisers.update(opt_state, model, grads[1])
+            #opt_state, model = Optimisers.update(opt_state, model, grads[1])
 
             acc_loss += loss * size(xt)[end]
             acc_count += size(xt)[end]
@@ -524,14 +539,14 @@ function train!(model,dl;
         end
 
         if (checkpoint_dirname != "") && (k % checkpoint_epoch == 0)
-            savemodel(model,checkpoint_dirname,k,train_mean,train_std,beta,losses)
+            savemodel((ps,st),checkpoint_dirname,k,train_mean,train_std,beta,losses)
         end
 
         GC.gc()
         #CUDA.reclaim()
     end
 
-    return alpha, alpha_bar, sigma, losses
+    return alpha, alpha_bar, sigma, losses, ps, st
 end
 
 """

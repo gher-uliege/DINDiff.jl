@@ -1,5 +1,3 @@
-using Flux
-
 function showsize(msg)
     function f(x)
         #@show msg,size(x)
@@ -19,10 +17,10 @@ end
 
 function DConv(ks,(in,out), σ = identity; kwargs...)
     [
-        Conv(ks,in => out; bias = false, kwargs...),
+        Conv(ks,in => out; use_bias = false, kwargs...),
         BatchNorm(out),
         σ,
-        Conv(ks,out => out; bias = false, kwargs...),
+        Conv(ks,out => out; use_bias = false, kwargs...),
         BatchNorm(out),
         σ,
     ]
