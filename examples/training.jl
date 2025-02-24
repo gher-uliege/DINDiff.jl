@@ -77,7 +77,7 @@ isvalid = nothing
 
 
 batch_size = 64
-checkpoint_epoch = 20
+checkpoint_epoch = 200
 nb_epochs = 140
 nb_epochs =  20
 #nb_epochs =  100
@@ -251,7 +251,7 @@ dl = Flux.DataLoader(dd; batchsize = batch_size, shuffle=true,
 
 alpha, alpha_bar, sigma, losses = @time train!(
     model,dl;
-    device = gpu,
+    device = device,
     nb_epochs = nb_epochs,
     learning_rate = learning_rate,
     batch_size = batch_size,
