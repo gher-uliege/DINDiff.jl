@@ -469,8 +469,8 @@ function train!(model,dl;
                 rng = Random.GLOBAL_RNG,
                 train_mean = 0,
                 train_std = 1,
-                ddp = false,
                 backend = nothing,
+                ddp = !isnothing(backend),
               )
 
     alpha,alpha_bar,sigma = device.(noise_schedule(beta))
