@@ -248,6 +248,24 @@ dl = DataLoader(dd; batchsize = batch_size, shuffle=true,
 (xt,tt,eps,mask) = first(dl);
 #ϵ = model((xt, tt));
 
+# warm-up
+alpha, alpha_bar, sigma, losses, ps, st = train!(
+    model,dl;
+    nb_epochs = 2,
+    device,
+    learning_rate,
+    batch_size,
+    beta,
+    learning_rate_drop_epoch,
+    learning_rate_factor,
+    checkpoint_dirname,
+    checkpoint_epoch,
+    auxdata_loader,
+    train_mean,
+    train_std,
+    backend,
+);
+
 alpha, alpha_bar, sigma, losses, ps, st = @time train!(
     model,dl;
     nb_epochs,
