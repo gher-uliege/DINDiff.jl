@@ -115,7 +115,7 @@ resdir = joinpath(datadir,timestamp)
 
 @info "loading data"
 
-train_input = ncload(fname,varname,datatrans; isvalid);
+train_input = ncload(fname,varname,datatrans; isvalid, backend);
 train_input = extend(train_input);
 
 #@info "remove mean"

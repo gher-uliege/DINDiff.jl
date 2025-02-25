@@ -577,14 +577,25 @@ end
 Load the variable `varname` from the file `fname_train` and apply the
 transformation `trans` (default `log10`).
 """
-function ncload(fname_train,varname,trans=log10; isvalid = nothing)
+function ncload(fname_train,varname,trans=log10; isvalid = nothing, backend = nothing)
 
     ds = NCDataset(fname_train)
 
     data_sz = size(ds[varname])
 
     #tindex = 1:10000
-    tindex = 1:data_sz[end]
+    if isnothing(backend)
+        tindex = 1:data_sz[end]
+    else
+        N = data_sz[end]
+        total_workers = DistributedUtils.total_workers(backend)
+        local_rank = DistributedUtils.local_rank(backend)
+
+        tindex = ((local_rank * N) ÷ total_workers + 1):(((local_rank+1) * N) ÷ total_workers)
+
+        println("total workers: ", DistributedUtils.total_workers(backend))
+        println("rank ",DistributedUtils.local_rank(backend),": ",tindex)
+    end
 #    println("load subset $tindex")
     train_input = zeros(Float32,(data_sz[1],data_sz[2],1,length(tindex)));
 
