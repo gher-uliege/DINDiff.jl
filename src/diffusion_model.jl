@@ -504,7 +504,7 @@ function train!(model,dl;
 
     losses = Float32[]
 
-    @time for k = 1:nb_epochs
+    for k = 1:nb_epochs
         if k % learning_rate_drop_epoch == 0
             learning_rate *= learning_rate_factor
             Optimisers.adjust!(opt_state, learning_rate)
