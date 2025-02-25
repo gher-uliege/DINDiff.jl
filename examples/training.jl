@@ -265,6 +265,8 @@ alpha, alpha_bar, sigma, losses, ps, st = @time train!(
     backend,
 );
 
-# mirlo : 20 epoch 30sec lux.
-savemodel((ps,st),model_fname,train_mean,train_std,beta,losses)
+
+if local_rank == 0
+    savemodel((ps,st),model_fname,train_mean,train_std,beta,losses)
+end
 
