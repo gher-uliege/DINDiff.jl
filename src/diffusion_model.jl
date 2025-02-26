@@ -473,6 +473,12 @@ function train!(model,dl;
                 ddp = !isnothing(backend),
               )
 
+    local_rank = if isnothing(backend)
+        0
+    else
+        DistributedUtils.local_rank(backend)
+    end
+
     alpha,alpha_bar,sigma = device.(noise_schedule(beta))
 
 
@@ -538,7 +544,7 @@ function train!(model,dl;
             error("loss is NaN")
         end
 
-        if (checkpoint_dirname != "") && (k % checkpoint_epoch == 0)
+        if (local_rank == 0) && (checkpoint_dirname != "") && (k % checkpoint_epoch == 0)
             savemodel((ps,st),checkpoint_dirname,k,train_mean,train_std,beta,losses)
         end
 
