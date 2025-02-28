@@ -6,6 +6,8 @@ parallel = get(ENV,"PARALLEL","false") == "true"
 using Pkg
 Pkg.activate(dirname(@__FILE__))
 
+Pkg.status()
+
 using JLD2
 using DataStructures
 using Dates
@@ -27,11 +29,13 @@ end
 
 if !isnothing(Sys.which("nvidia-smi"))
     import CUDA, cuDNN
-    CUDA.allowscalar(false)
+    const GPU=CUDA
 else
     import AMDGPU
-    AMDGPU.allowscalar(false)
+    const GPU=AMDGPU
 end
+
+GPU.allowscalar(false)
 
 function pprintln(backend,args...)
     MPI.Barrier(backend.comm)
@@ -40,6 +44,9 @@ function pprintln(backend,args...)
 end
 pprintln(::Nothing,args...) = println(args...)
 
+function gpusync()
+    GPU.synchronize()
+end
 
 local_rank = 0
 if parallel
@@ -51,6 +58,7 @@ else
     backend = nothing
 end
 
+@show parallel
 timestamp = Dates.format(Dates.now(),"yyyy-mm-ddTHHMMSS")
 
 # training on CPU or GPU
@@ -69,7 +77,7 @@ datadir = dirname(fname)
 
 
 fname = expanduser("~/Data/Global/MODIS/patches_sst_0.25_train.nc")
-fname = expanduser("~/Data/Global/MODIS/patches_sst_0.25_train_512.nc")
+#fname = expanduser("~/Data/Global/MODIS/patches_sst_0.25_train_512.nc")
 varname = "sst"
 datadir = expanduser("~/tmp/SST-diffusion-model")
 datatrans = identity
@@ -264,6 +272,7 @@ alpha, alpha_bar, sigma, losses, ps, st = train!(
     train_mean,
     train_std,
     backend,
+    gpusync,
 );
 
 alpha, alpha_bar, sigma, losses, ps, st = @time train!(
@@ -281,6 +290,7 @@ alpha, alpha_bar, sigma, losses, ps, st = @time train!(
     train_mean,
     train_std,
     backend,
+    gpusync,
 );
 
 

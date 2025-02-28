@@ -408,7 +408,8 @@ function getobs(d::DatasetLoader{T},index::Union{AbstractVector,Integer}) where 
     mask = @. isnan(x_mask) & !isnan(x0)
 
     # necessary because 0 * NaN is NaN
-    x0[isnan.(x0)] .= 0;
+    #x0[isnan.(x0)] .= 0;
+    x0 = ifelse.(isnan.(x0),zero(eltype(x0)),x0);
 
     # t diffusion "time step"
     ts = similar(x0,Int16,1,1,1,length(index))
@@ -471,6 +472,7 @@ function train!(model,dl;
                 train_std = 1,
                 backend = nothing,
                 ddp = !isnothing(backend),
+                gpusync = () -> nothing,
               )
 
     local_rank = if isnothing(backend)
@@ -506,6 +508,7 @@ function train!(model,dl;
         opt_state = DistributedUtils.synchronize!!(backend, opt_state)
     end
 
+    gpusync()
     #AMDGPU.synchronize()
 
     losses = Float32[]
@@ -549,7 +552,7 @@ function train!(model,dl;
         end
 
         GC.gc()
-        #CUDA.reclaim()
+        #GPU.reclaim()
     end
 
     return alpha, alpha_bar, sigma, losses, ps, st
