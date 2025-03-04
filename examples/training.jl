@@ -256,6 +256,7 @@ dl = DataLoader(dd; batchsize = batch_size, shuffle=true,
 (xt,tt,eps,mask) = first(dl);
 #ϵ = model((xt, tt));
 
+#=
 # warm-up
 alpha, alpha_bar, sigma, losses, ps, st = train!(
     model,dl;
@@ -274,6 +275,7 @@ alpha, alpha_bar, sigma, losses, ps, st = train!(
     backend,
     gpusync,
 );
+=#
 
 alpha, alpha_bar, sigma, losses, ps, st = @time train!(
     model,dl;
