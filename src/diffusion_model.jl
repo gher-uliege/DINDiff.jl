@@ -385,6 +385,60 @@ function getobs_orig(d::DatasetLoader,index::Union{AbstractVector,Integer})
     return (x0_cpu,x_mask_cpu,aux_data)
 end
 
+
+
+@kernel function prepdata_kernel(xt,tt,eps,mask,rand_diffusion_time,x0::AbstractArray{T},x_mask,steps::Tstep,alpha_bar) where {Tstep,T}
+    ic = @index(Global,Cartesian)
+    i = @index(Global,Linear)
+
+    if isnan(x0[i])
+        # initially missing
+        t = steps
+        mask[i] = false
+        # necessary because 0 * NaN is NaN
+        x0[i] = 0
+    else
+        if isnan(x_mask[i])
+            # masking
+            t = unsafe_trunc(Tstep,rand_diffusion_time[ic[4]] * steps + 1)
+            mask[i] = true
+        else
+            # uncorrupted state
+            t = one(Tstep)
+            mask[i] = false
+        end
+    end
+
+    xt[i] = sqrt(alpha_bar[t]) * x0[i] + sqrt(1 - alpha_bar[t]) * eps[i]
+
+    # scale from -1/2 to 1/2
+    tt[i] = (T(t) - T(1)) / (steps - 1) - T(1)/2
+end
+
+
+function prepdata3!((xt,tt,eps,mask,rand_diffusion_time),x0,x_mask,steps,alpha_bar)
+    rand!(rand_diffusion_time)
+    randn!(eps)
+
+    dev = KernelAbstractions.get_backend(x0)
+    ev = prepdata_kernel(dev)(xt,tt,eps,mask,rand_diffusion_time,x0,x_mask,steps,alpha_bar, ndrange=size(x0))
+    KernelAbstractions.synchronize(dev)
+end
+
+
+function prepdata3(x0,x_mask,steps,alpha_bar)
+
+    mask = similar(x0, Bool);
+    eps = similar(x0);
+    tt = similar(x0);
+    xt = similar(x0);
+    rand_diffusion_time = similar(x0,size(x0)[end])
+
+    prepdata3!((xt,tt,eps,mask,rand_diffusion_time),x0,x_mask,steps,alpha_bar)
+    return (xt,tt,eps,mask)
+end
+
+
 function getobs(d::DatasetLoader{T},index::Union{AbstractVector,Integer}) where T
     alpha_bar = d.alpha_bar
     steps = d.steps
@@ -401,34 +455,9 @@ function getobs(d::DatasetLoader{T},index::Union{AbstractVector,Integer}) where 
     copyto!(x_mask,x_mask_cpu)
     copyto!(aux_data,aux_data_cpu)
 
-    has_no_data_orig = isnan.(x0)
-    # where we pretend there is no data
-    has_no_data = @. isnan(x_mask) || isnan(x0)
-    # where to evaluate the loss function
-    mask = @. isnan(x_mask) & !isnan(x0)
+    (xt,tt,eps,mask) = prepdata3(x0,x_mask,steps,alpha_bar);
 
-    # necessary because 0 * NaN is NaN
-    #x0[isnan.(x0)] .= 0;
-    x0 = ifelse.(isnan.(x0),zero(eltype(x0)),x0);
-
-    # t diffusion "time step"
-    ts = similar(x0,Int16,1,1,1,length(index))
-    rand_range!(ts,1:steps)
-    t = similar(x0,Int16,size(x0)...);
-    t .= ts
-    t[.!has_no_data] .= 1 # at uncorrupted stage
-    t[has_no_data_orig] .= steps # at fully corrupted stage
-
-    # eps noise
-    eps = similar(x0,size(x0)...)
-    randn!(eps)
-
-    xt = sqrt.(alpha_bar[t]) .* x0 + sqrt.(1 .- alpha_bar[t]) .* eps
-
-    # scale from -1/2 to 1/2
-    tt = (T.(t) .- 1) ./ (steps .- 1) .- T(1/2)
-
-    xt = cat(xt,aux_data,dims=3)
+    #xt = cat(xt,aux_data,dims=3)
     return (xt,tt,eps,mask)
 end
 

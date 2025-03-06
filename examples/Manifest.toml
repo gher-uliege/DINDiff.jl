@@ -388,7 +388,7 @@ uuid = "a8cc5b0e-0ffa-5ad4-8c14-923d3ee1735f"
 version = "4.1.1"
 
 [[deps.DINDiff]]
-deps = ["DataStructures", "Dates", "JLD2", "JSON3", "Lux", "MLUtils", "NCDatasets", "Optimisers", "Printf", "Random", "Statistics", "Test", "Zygote"]
+deps = ["DataStructures", "Dates", "JLD2", "JSON3", "KernelAbstractions", "Lux", "MLUtils", "NCDatasets", "Optimisers", "Printf", "Random", "Statistics", "Test", "Zygote"]
 path = ".."
 uuid = "a109cbdf-a86b-4edd-9e54-81f3491ce7a2"
 version = "0.1.0"

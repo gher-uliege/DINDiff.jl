@@ -11,6 +11,7 @@ using Statistics
 using JLD2
 using Optimisers
 using Zygote
+using KernelAbstractions
 
 include("diffusion_model.jl")
 include("data.jl")
