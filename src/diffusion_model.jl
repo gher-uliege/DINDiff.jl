@@ -586,7 +586,7 @@ end
 Load the variable `varname` from the file `fname_train` and apply the
 transformation `trans` (default `log10`).
 """
-function ncload(fname_train,varname,trans=log10; isvalid = nothing, backend = nothing)
+function ncload(fname_train,varname,trans=log10; isvalid = nothing, backend = nothing, nmultiple = 1)
 
     ds = NCDataset(fname_train)
 
@@ -597,6 +597,9 @@ function ncload(fname_train,varname,trans=log10; isvalid = nothing, backend = no
         tindex = 1:data_sz[end]
     else
         N = data_sz[end]
+        #debug
+        N = (N ÷ nmultiple) * nmultiple
+        @info "using $N (out of  $(data_sz[end]))"
         total_workers = DistributedUtils.total_workers(backend)
         local_rank = DistributedUtils.local_rank(backend)
 
