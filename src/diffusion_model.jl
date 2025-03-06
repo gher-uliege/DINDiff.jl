@@ -592,14 +592,13 @@ function ncload(fname_train,varname,trans=log10; isvalid = nothing, backend = no
 
     data_sz = size(ds[varname])
 
-    #tindex = 1:10000
+    N = data_sz[end]
+    N = (N ÷ nmultiple) * nmultiple
+    @info "using $N (out of  $(data_sz[end]))"
+    
     if isnothing(backend)
-        tindex = 1:data_sz[end]
+        tindex = 1:N
     else
-        N = data_sz[end]
-        #debug
-        N = (N ÷ nmultiple) * nmultiple
-        @info "using $N (out of  $(data_sz[end]))"
         total_workers = DistributedUtils.total_workers(backend)
         local_rank = DistributedUtils.local_rank(backend)
 
