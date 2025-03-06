@@ -39,13 +39,13 @@ function block(channels; ks = 3, activation=relu, connection = cat_channels, poo
         SkipConnection(
             Chain(
                 pool((2,2)),
-                DConv((ks,ks),channels[1]=>channels[2],activation,pad = SamePad())...,
+                DConv((ks,ks),channels[1]=>channels[2],activation,pad = SamePad(), cross_correlation=Lux.True())...,
                 #showsize("before 3 $(channels[2])"),
                 inner_block...,
-                ConvTranspose((2,2),channels[2]=>channels[1],activation,pad=SamePad(),stride=2),
+                ConvTranspose((2,2),channels[2]=>channels[1],activation,pad=SamePad(),stride=2, cross_correlation=Lux.True()),
         ),
             connection),
-        DConv((ks,ks),nout=>channels[1],activation,pad = SamePad())...,
+        DConv((ks,ks),nout=>channels[1],activation,pad = SamePad(), cross_correlation=Lux.True())...,
     ]
 end
 
@@ -67,10 +67,10 @@ function genmodel(;in_channels = 1,
 
     model = Chain(
         head...,
-        DConv((kernel_size,kernel_size),in_channels=>channels[1],activation,pad = SamePad())...,
+        DConv((kernel_size,kernel_size),in_channels=>channels[1],activation,pad = SamePad(), cross_correlation=Lux.True())...,
         #showsize("before 0"),
         inner_block...,
-        Conv((1,1),channels[1]=>out_channels,out_activation,pad = SamePad()),
+        Conv((1,1),channels[1]=>out_channels,out_activation,pad = SamePad(), cross_correlation=Lux.True()),
     )
 end
 
