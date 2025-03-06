@@ -121,7 +121,7 @@ resdir = joinpath(datadir,timestamp)
 
 @info "$(Threads.nthreads()) thread(s) available"
 
-@info "loading data"
+@info "loading data: $fname"
 
 train_input = ncload(fname,varname,datatrans; isvalid, backend);
 train_input = extend(train_input);
@@ -178,11 +178,17 @@ model_fname = joinpath(resdir,"model_diffusion.jld2")
 
 if local_rank == 0
     for fn in glob("*.jl",dirname(@__FILE__))
-        cp(fn,joinpath(resdir,basename(fn)))
+        println("[rank $local_rank]: copying $fn")
+        if !isfile(joinpath(resdir,basename(fn)))
+            cp(fn,joinpath(resdir,basename(fn)))
+        end
     end
 
     for fn in glob("*.jl",dirname(pathof(DINDiff)))
-        cp(fn,joinpath(resdir,basename(fn)))
+        println("[rank $local_rank]: copying $fn")
+        if !isfile(joinpath(resdir,basename(fn)))
+            cp(fn,joinpath(resdir,basename(fn)))
+        end
     end
 end
 
@@ -256,7 +262,8 @@ dl = DataLoader(dd; batchsize = batch_size, shuffle=true,
 (xt,tt,eps,mask) = first(dl);
 #ϵ = model((xt, tt));
 
-#=
+if size(train_input)[end] == 512
+    @info "warm-up"
 # warm-up
 alpha, alpha_bar, sigma, losses, ps, st = train!(
     model,dl;
@@ -275,7 +282,8 @@ alpha, alpha_bar, sigma, losses, ps, st = train!(
     backend,
     gpusync,
 );
-=#
+
+end
 
 alpha, alpha_bar, sigma, losses, ps, st = @time train!(
     model,dl;
