@@ -518,8 +518,8 @@ function train!(model,dl;
     rng = Random.default_rng()
     ps, st = Lux.setup(rng, model)
 
-    nb_parameters = sum(length,st)
-    println("nb_parameters: ",nb_parameters)
+    #nb_parameters = sum(length,ps)
+    #println("nb_parameters: ",nb_parameters)
 
     if ddp
         #data = DistributedUtils.DistributedDataContainer(backend, x)
