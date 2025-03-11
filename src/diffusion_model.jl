@@ -578,14 +578,14 @@ function train!(model,dl;
         end
 
         if (local_rank == 0) && (checkpoint_dirname != "") && (k % checkpoint_epoch == 0)
-            savemodel((ps,st),checkpoint_dirname,k,train_mean,train_std,beta,losses)
+            savemodel((train_state.parameters,train_state.states),checkpoint_dirname,k,train_mean,train_std,beta,losses)
         end
 
         GC.gc()
         #GPU.reclaim()
     end
 
-    return alpha, alpha_bar, sigma, losses, ps, st
+    return alpha, alpha_bar, sigma, losses, train_state.parameters, train_state.states
 end
 
 """
