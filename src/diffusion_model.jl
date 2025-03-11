@@ -24,7 +24,8 @@ Conditional generation `x` using incomplete image `x0` (where missing values are
 
 `x0` is a tensor of the dimension width x height x channel.
 """
-function generate_cond(device, beta, model, train_mean, train_std, x0, Nsample; x_diff = nothing, auxdata = nothing, noise = nothing)
+function generate_cond(device, beta, model, model_parameters,model_state, train_mean, train_std, x0, Nsample; x_diff = nothing, auxdata = nothing, noise = nothing)
+    cpu = cpu_device()
     T = length(beta)
 
     α,ᾱ,σ = noise_schedule(device(beta))
@@ -66,7 +67,7 @@ function generate_cond(device, beta, model, train_mean, train_std, x0, Nsample; 
         else
             xin = x
         end
-        ϵ = model((xin,tt));
+        ϵ,model_state = model((xin,tt), model_parameters, model_state);
         islast = tt_index .== 1;
 
         #zt = randn(Float32,size(x));
