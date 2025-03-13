@@ -401,7 +401,8 @@ end
     else
         if isnan(x_mask[i])
             # masking
-            t = unsafe_trunc(Tstep,rand_diffusion_time[ic[4]] * steps + 1)
+            _t = unsafe_trunc(Tstep,rand_diffusion_time[ic[4]] * steps) + 1
+            t = min(_t,steps)
             mask[i] = true
         else
             # uncorrupted state
