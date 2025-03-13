@@ -123,7 +123,7 @@ resdir = joinpath(datadir,timestamp)
 
 @info "loading data: $fname"
 
-train_input = ncload(fname,varname,datatrans; isvalid, backend, nmultiple = 512);
+train_input = ncload(fname,varname,datatrans; isvalid, backend, nmultiple = batch_size*8);
 train_input = extend(train_input);
 
 #@info "remove mean"
