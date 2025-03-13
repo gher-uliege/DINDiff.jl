@@ -50,7 +50,7 @@ isvalid = nothing
 #timestamp = "2024-10-10T132004" # better, noisy where missing
 #timestamp = "2024-10-11T171931" # with aux
 #timestamp = "2024-10-15T125257" # must remove mean,noisy where missing,somewhat ok
-timestamp = sort(readdir(expdir))[end]
+timestamp = sort(filter(s -> !isnothing(match(r"2.*",s)),readdir(expdir)))[end]
 #timestamp = "2024-10-10T132004"
 
 max_missing_fraction = 0.25
