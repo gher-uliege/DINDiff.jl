@@ -24,7 +24,8 @@ Conditional generation `x` using incomplete image `x0` (where missing values are
 
 `x0` is a tensor of the dimension width x height x channel.
 """
-function generate_cond(device, beta, model, train_mean, train_std, x0, Nsample; x_diff = nothing, auxdata = nothing, noise = nothing)
+function generate_cond(device, beta, model, model_parameters,model_state, train_mean, train_std, x0, Nsample; x_diff = nothing, auxdata = nothing, noise = nothing)
+    cpu = cpu_device()
     T = length(beta)
 
     α,ᾱ,σ = noise_schedule(device(beta))
@@ -66,7 +67,7 @@ function generate_cond(device, beta, model, train_mean, train_std, x0, Nsample; 
         else
             xin = x
         end
-        ϵ = model((xin,tt));
+        ϵ,model_state = model((xin,tt), model_parameters, model_state);
         islast = tt_index .== 1;
 
         #zt = randn(Float32,size(x));
@@ -400,7 +401,8 @@ end
     else
         if isnan(x_mask[i])
             # masking
-            t = unsafe_trunc(Tstep,rand_diffusion_time[ic[4]] * steps + 1)
+            _t = unsafe_trunc(Tstep,rand_diffusion_time[ic[4]] * steps) + 1
+            t = min(_t,steps)
             mask[i] = true
         else
             # uncorrupted state
@@ -416,9 +418,11 @@ end
 end
 
 
-function prepdata3!((xt,tt,eps,mask,rand_diffusion_time),x0,x_mask,steps,alpha_bar)
+function prepdata3!((xt,tt,eps,mask,rand_diffusion_time),x0,x_mask,alpha_bar)
     rand!(rand_diffusion_time)
     randn!(eps)
+
+    steps = Int32(length(alpha_bar))
 
     dev = KernelAbstractions.get_backend(x0)
     ev = prepdata_kernel(dev)(xt,tt,eps,mask,rand_diffusion_time,x0,x_mask,steps,alpha_bar, ndrange=size(x0))
@@ -426,7 +430,7 @@ function prepdata3!((xt,tt,eps,mask,rand_diffusion_time),x0,x_mask,steps,alpha_b
 end
 
 
-function prepdata3(x0,x_mask,steps,alpha_bar)
+function prepdata3(x0,x_mask,alpha_bar)
 
     mask = similar(x0, Bool);
     eps = similar(x0);
@@ -434,14 +438,20 @@ function prepdata3(x0,x_mask,steps,alpha_bar)
     xt = similar(x0);
     rand_diffusion_time = similar(x0,size(x0)[end])
 
-    prepdata3!((xt,tt,eps,mask,rand_diffusion_time),x0,x_mask,steps,alpha_bar)
+    sz = size(x0)
+
+    if ((sz != size(tt)) || (sz != size(xt)) || (sz != size(eps)) ||
+        (sz != size(mask)) || (sz != size(x_mask)))
+
+        @error "unexpected size" size(x0) size(tt) size(xt) size(eps) size(x_mask)
+    end
+    prepdata3!((xt,tt,eps,mask,rand_diffusion_time),x0,x_mask,alpha_bar)
     return (xt,tt,eps,mask)
 end
 
 
 function getobs(d::DatasetLoader{T},index::Union{AbstractVector,Integer}) where T
     alpha_bar = d.alpha_bar
-    steps = d.steps
     rng = d.rng
     sz = size(d.train_input)[1:2]
 
@@ -455,7 +465,7 @@ function getobs(d::DatasetLoader{T},index::Union{AbstractVector,Integer}) where 
     copyto!(x_mask,x_mask_cpu)
     copyto!(aux_data,aux_data_cpu)
 
-    (xt,tt,eps,mask) = prepdata3(x0,x_mask,steps,alpha_bar);
+    (xt,tt,eps,mask) = prepdata3(x0,x_mask,alpha_bar);
 
     #xt = cat(xt,aux_data,dims=3)
     return (xt,tt,eps,mask)
@@ -517,8 +527,8 @@ function train!(model,dl;
     rng = Random.default_rng()
     ps, st = Lux.setup(rng, model)
 
-    nb_parameters = sum(length,st)
-    println("nb_parameters: ",nb_parameters)
+    #nb_parameters = sum(length,ps)
+    #println("nb_parameters: ",nb_parameters)
 
     if ddp
         #data = DistributedUtils.DistributedDataContainer(backend, x)
@@ -577,14 +587,14 @@ function train!(model,dl;
         end
 
         if (local_rank == 0) && (checkpoint_dirname != "") && (k % checkpoint_epoch == 0)
-            savemodel((ps,st),checkpoint_dirname,k,train_mean,train_std,beta,losses)
+            savemodel((train_state.parameters,train_state.states),checkpoint_dirname,k,train_mean,train_std,beta,losses)
         end
 
         GC.gc()
         #GPU.reclaim()
     end
 
-    return alpha, alpha_bar, sigma, losses, ps, st
+    return alpha, alpha_bar, sigma, losses, train_state.parameters, train_state.states
 end
 
 """

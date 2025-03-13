@@ -6,7 +6,7 @@ Pkg.activate(dirname(@__FILE__))
 using JLD2
 using DataStructures
 using Dates
-using Flux
+using Lux
 using Glob
 using JSON3
 using NCDatasets
@@ -50,7 +50,7 @@ isvalid = nothing
 #timestamp = "2024-10-10T132004" # better, noisy where missing
 #timestamp = "2024-10-11T171931" # with aux
 #timestamp = "2024-10-15T125257" # must remove mean,noisy where missing,somewhat ok
-timestamp = sort(readdir(expdir))[end]
+timestamp = sort(filter(s -> !isnothing(match(r"2.*",s)),readdir(expdir)))[end]
 #timestamp = "2024-10-10T132004"
 
 max_missing_fraction = 0.25
@@ -134,7 +134,7 @@ fname_cv_stat = replace(model_fname,".jld2" => "") * "_" * replace(basename(fnam
 
 @show model_fname
 
-model,params = loadmodel(model_fname);
+model,(model_parameters,model_state),params = loadmodel(model_fname);
 
 ntime_win = params.ntime_win
 beta = params.beta
@@ -163,8 +163,10 @@ ds_mask = view(ds_mask_all,time = tindex)
 
 close(ds_all)
 
-device = gpu
-model = model |> device;
+device = gpu_device()
+cpu = cpu_device()
+model_parameters = model_parameters |> device
+model_state = model_state |> device
 
 training = false
 
@@ -185,6 +187,11 @@ ntimes = 1:size(ncdata,3)
 
 x_diff = nothing
 
+nglobal = tindex[1]
+n = ntimes[1]
+
+model_state = Lux.testmode(model_state)
+
 # time loop
 for (nglobal,n) = zip(tindex,ntimes)
     local x0
@@ -199,17 +206,16 @@ for (nglobal,n) = zip(tindex,ntimes)
 
     #x0 .= x0 .- mean(filter(isfinite,x0))
 
-    mask_cv = Bool.(ncmask_cv[:,:,n]) |> gpu
+    mask_cv = Bool.(ncmask_cv[:,:,n]) |> device
     x0[mask_cv .== 0] .= NaN
 
     #x_diff = nothing
 
     xc = generate_cond(
-        device, beta, model, train_mean, train_std, x0, Nsample;
+        device, beta, model, model_parameters,model_state, train_mean, train_std, x0, Nsample;
         auxdata = aux_data,
         x_diff = x_diff,
     );
-
 
     if !isnothing(x_diff)
         fname_out = joinpath(dirname(model_fname),"$(dataset)_diff_$(nglobal).nc")
