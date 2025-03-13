@@ -164,6 +164,7 @@ ds_mask = view(ds_mask_all,time = tindex)
 close(ds_all)
 
 device = gpu_device()
+cpu = cpu_device()
 model_parameters = model_parameters |> device
 model_state = model_state |> device
 

@@ -418,9 +418,11 @@ end
 end
 
 
-function prepdata3!((xt,tt,eps,mask,rand_diffusion_time),x0,x_mask,steps,alpha_bar)
+function prepdata3!((xt,tt,eps,mask,rand_diffusion_time),x0,x_mask,alpha_bar)
     rand!(rand_diffusion_time)
     randn!(eps)
+
+    steps = Int32(length(alpha_bar))
 
     dev = KernelAbstractions.get_backend(x0)
     ev = prepdata_kernel(dev)(xt,tt,eps,mask,rand_diffusion_time,x0,x_mask,steps,alpha_bar, ndrange=size(x0))
@@ -428,7 +430,7 @@ function prepdata3!((xt,tt,eps,mask,rand_diffusion_time),x0,x_mask,steps,alpha_b
 end
 
 
-function prepdata3(x0,x_mask,steps,alpha_bar)
+function prepdata3(x0,x_mask,alpha_bar)
 
     mask = similar(x0, Bool);
     eps = similar(x0);
@@ -436,14 +438,20 @@ function prepdata3(x0,x_mask,steps,alpha_bar)
     xt = similar(x0);
     rand_diffusion_time = similar(x0,size(x0)[end])
 
-    prepdata3!((xt,tt,eps,mask,rand_diffusion_time),x0,x_mask,steps,alpha_bar)
+    sz = size(x0)
+
+    if ((sz != size(tt)) || (sz != size(xt)) || (sz != size(eps)) ||
+        (sz != size(mask)) || (sz != size(x_mask)))
+
+        @error "unexpected size" size(x0) size(tt) size(xt) size(eps) size(x_mask)
+    end
+    prepdata3!((xt,tt,eps,mask,rand_diffusion_time),x0,x_mask,alpha_bar)
     return (xt,tt,eps,mask)
 end
 
 
 function getobs(d::DatasetLoader{T},index::Union{AbstractVector,Integer}) where T
     alpha_bar = d.alpha_bar
-    steps = d.steps
     rng = d.rng
     sz = size(d.train_input)[1:2]
 
@@ -457,7 +465,7 @@ function getobs(d::DatasetLoader{T},index::Union{AbstractVector,Integer}) where 
     copyto!(x_mask,x_mask_cpu)
     copyto!(aux_data,aux_data_cpu)
 
-    (xt,tt,eps,mask) = prepdata3(x0,x_mask,steps,alpha_bar);
+    (xt,tt,eps,mask) = prepdata3(x0,x_mask,alpha_bar);
 
     #xt = cat(xt,aux_data,dims=3)
     return (xt,tt,eps,mask)
