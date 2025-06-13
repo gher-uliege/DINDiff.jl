@@ -211,7 +211,7 @@ model = genmodel(;
 
 checkpoint_dirname = resdir
 
-
+# TODO sync mean and std accross process
 train_mean = Float32(mean(skipnan(Float64,train_input)))
 train_std = Float32(std(skipnan(Float64,train_input)))
 
