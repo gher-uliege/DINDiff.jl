@@ -52,6 +52,7 @@ isvalid = nothing
 #timestamp = "2024-10-15T125257" # must remove mean,noisy where missing,somewhat ok
 timestamp = sort(filter(s -> !isnothing(match(r"2.*",s)),readdir(expdir)))[end]
 #timestamp = "2024-10-10T132004"
+#timestamp = "2025-03-08T142143"
 
 max_missing_fraction = 0.25
 split_name = ["train","dev","test"]
@@ -97,6 +98,7 @@ tindex = 1:20
 tindex = Colon()
 
 tindex = [400]
+tindex = [170]
 
 # ds_train = NCDataset(fname_train)
 # lon_range = extrema(ds_train["lon"][:,:])

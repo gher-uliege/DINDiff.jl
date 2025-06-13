@@ -13,11 +13,12 @@ mask = dsm["mask"][:,:];
 
 
 nglobal = 400
+nglobal = 170
 tindex = [nglobal]
 
 dataset = "dev"
 
-timestamp = sort(readdir(expdir))[end]
+timestamp = sort(filter(s -> !isnothing(match(r"2.*",s)),readdir(expdir)))[end]
 model_fname = joinpath(expdir,timestamp,"model_diffusion.jld2")
 
 fname_out = joinpath(dirname(model_fname),"$(dataset)_diff_$(nglobal).nc")
