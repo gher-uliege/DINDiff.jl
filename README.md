@@ -1,14 +1,20 @@
 [![DOI](https://zenodo.org/badge/832065698.svg)](https://zenodo.org/doi/10.5281/zenodo.13165362)
 
-# DINDiff
+# Data-interpolating denoising diffusion model (DINDiff)
 
 This is the source code for the manuscript:
 
-Alexander Barth, Julien Brajard, Aida Alvera-Azcárate, Bayoumy Mohamed, Charles Troupin, and Jean-Marie Beckers,
-Ensemble reconstruction of missing satellite data using a denoising diffusion model: application to chlorophyll a concentration in the Black Sea, 2024
-https://egusphere.copernicus.org/preprints/2024/egusphere-2024-1075/
+Barth, A., Brajard, J., Alvera-Azcárate, A., Mohamed, B., Troupin, C., and Beckers, J.-M.: Ensemble reconstruction of missing satellite data using a denoising diffusion model: application to chlorophyll a concentration in the Black Sea, Ocean Sci., 20, 1567–1584, [https://doi.org/10.5194/os-20-1567-2024](https://doi.org/10.5194/os-20-1567-2024), 2024.
 
-Submitted to Ocean Science
+
+https://github.com/user-attachments/assets/7fe1d359-252d-4a93-b014-6f183f1ffa32
+
+* Satellite sea-surface temperature (MODIS: Moderate-resolution Imaging Spectroradiometer) at 4 km resolution 
+* Training on global dataset (2000-2018), with patches of the size 128x128 pixels during 160 epochs
+* 600 diffusion steps
+
+
+
 
 ## Installation
 
